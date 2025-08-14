@@ -4,7 +4,7 @@ class UserController {
   public function updateProfile() {
     header('Content-Type: application/json');
 
-    // Decode JSON input
+    
     $input = json_decode(file_get_contents('php://input'), true);
 
     if (!$input || !isset($input['user_id'])) {
