@@ -1,7 +1,7 @@
 <?php
 
-require_once __DIR__ . '/../config/db.php';
-require_once __DIR__ . '/../helpers/EmailOTP.php';
+require_once  '../../config/db.php';
+require_once  '../../helpers/EmailOTP.php';
 
 class SignupController {
     public static function generateOTP() {
@@ -17,7 +17,7 @@ class SignupController {
     public static function signup($data) {
         $name = $data['name'] ?? '';
         $mobile = $data['mobile'] ?? '';
-        $email = $data['email'] ?? '';
+    $email = strtolower($data['email'] ?? '');
         $password = $data['password'] ?? '';
 
         if (!$name || !$mobile || !$email || !$password) {
@@ -53,6 +53,25 @@ class SignupController {
 
         self::sendOTP($email, $otp);
         return ['status' => 200, 'body' => ['success' => true, 'message' => 'OTP sent to email', 'email' => $email]];
+    }
+
+    public static function resendOtp($email) {
+        $pdo = getDB();
+    $email = strtolower($email);
+    $stmt = $pdo->prepare('SELECT id, is_verified FROM users WHERE email = ?');
+    $stmt->execute([$email]);
+        $user = $stmt->fetch();
+        if (!$user) {
+            return ['status' => 404, 'body' => ['error' => 'User not found']];
+        }
+        if ($user['is_verified']) {
+            return ['status' => 409, 'body' => ['error' => 'User already verified']];
+        }
+        $otp = self::generateOTP();
+        $update = $pdo->prepare('UPDATE users SET otp = ?, otp_created_at = NOW() WHERE id = ?');
+        $update->execute([$otp, $user['id']]);
+        self::sendOTP($email, $otp);
+        return ['status' => 200, 'body' => ['success' => true, 'message' => 'OTP resent to email', 'email' => $email]];
     }
 }
 
