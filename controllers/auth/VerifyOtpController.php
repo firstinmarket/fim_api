@@ -17,7 +17,7 @@ class VerifyOtpController {
             }
             $update = $pdo->prepare('UPDATE users SET is_verified = 1 WHERE id = ?');
             $update->execute([$user['id']]);
-            return ['status' => 200, 'body' => ['success' => true, 'message' => 'Signup successful!']];
+                return ['status' => 200, 'body' => ['success' => true, 'message' => 'Signup successful!', 'user_id' => $user['id']]];
         } else {
             return ['status' => 401, 'body' => ['success' => false, 'message' => 'Invalid OTP or email.']];
         }

@@ -1,6 +1,6 @@
 <?php
-require_once __DIR__ . '/../config/db.php';
-require_once __DIR__ . '/../helpers/EmailOTP.php';
+require_once  '../../config/db.php';
+require_once  '../../helpers/EmailOTP.php';
 
 class LoginController {
     public static function login($data) {
@@ -24,13 +24,6 @@ class LoginController {
             return ['status' => 401, 'body' => ['error' => 'Invalid email or password.']];
         }
 
-        if (!$user['is_verified']) {
-            $otp = rand(100000, 999999);
-            $update = $pdo->prepare('UPDATE users SET otp = ?, otp_created_at = NOW() WHERE id = ?');
-            $update->execute([$otp, $user['id']]);
-            EmailOTP::send($email, $otp);
-            return ['status' => 200, 'body' => ['success' => true, 'message' => 'OTP sent to email for login verification', 'email' => $email]];
-        }
 
         // Set session for user
         if (session_status() === PHP_SESSION_NONE) {
@@ -39,6 +32,6 @@ class LoginController {
         $_SESSION['user_id'] = $user['id'];
         $_SESSION['email'] = $email;
         // Session will persist until logout
-        return ['status' => 200, 'body' => ['success' => true, 'message' => 'Login successful', 'email' => $email]];
+        return ['status' => 200, 'body' => ['success' => true, 'message' => 'Login successful', 'email' => $email,'user_id' => $user['id']]];
     }
 }

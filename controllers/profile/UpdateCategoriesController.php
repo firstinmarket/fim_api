@@ -8,10 +8,12 @@ class UpdateCategoriesController {
         $stmt = $pdo->prepare('DELETE FROM user_categories WHERE user_id = ?');
         $stmt->execute([$user_id]);
         // Add new categories
-        $stmt = $pdo->prepare('INSERT INTO user_categories (user_id, category_id) VALUES (?, ?)');
+        $stmt = $pdo->prepare('INSERT INTO user_categories (user_id, subcategory_id) VALUES (?, ?)');
         foreach ($category_ids as $cat_id) {
             $stmt->execute([$user_id, $cat_id]);
         }
+    
+      
         return ['status' => 200, 'body' => ['success' => true, 'message' => 'Categories updated successfully']];
     }
 }
