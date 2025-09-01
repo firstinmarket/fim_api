@@ -32,7 +32,7 @@ class SignupController {
             if ($user['is_verified']) {
                 return ['status' => 409, 'body' => ['error' => 'Mobile or email already registered and verified.']];
             } else {
-                // Resend OTP for not verified user
+              
                 $otp = self::generateOTP();
                 $update = $pdo->prepare('UPDATE users SET otp = ?, otp_created_at = NOW() WHERE id = ?');
                 $update->execute([$otp, $user['id']]);

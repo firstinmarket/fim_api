@@ -1,8 +1,8 @@
 <?php
 header('Content-Type: application/json');
-require_once __DIR__ . '/../../controllers/profile/UpdateMobileController.php';
+require_once '../../controllers/profile/UpdateMobileController.php';
 
-if ($_SERVER['REQUEST_METHOD'] === 'PATCH') {
+if ($_SERVER['REQUEST_METHOD'] === 'PUT') {
     $data = json_decode(file_get_contents('php://input'), true);
     $user_id = $data['user_id'] ?? '';
     $new_mobile = $data['new_mobile'] ?? '';

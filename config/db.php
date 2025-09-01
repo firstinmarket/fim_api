@@ -1,8 +1,14 @@
 <?php
+// $host = 'localhost';
+// $db   = 'vattava2_fim';
+// $user = 'vattava2_fim';
+// $pass = 'fim@2025';
+
 $host = 'localhost';
-$db   = 'vattava2_fim';
-$user = 'vattava2_fim';
-$pass = 'fim@2025';
+$db   = 'FIMNEWS';
+$user = 'root';
+$pass = '';
+
 $charset = 'utf8mb4';
 
 $dsn = "mysql:host=$host;dbname=$db;charset=$charset";
