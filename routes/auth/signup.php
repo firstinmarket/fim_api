@@ -1,9 +1,6 @@
 <?php
 
-header('Content-Type: application/json');
-
-
-
+include("../../config/cors.php") ; 
 
 require_once '../../controllers/auth/SignupController.php';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
