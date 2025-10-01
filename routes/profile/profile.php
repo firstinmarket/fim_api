@@ -1,4 +1,5 @@
 <?php
+include("../../config/cors.php");
 require_once '../../controllers/profile/ProfileController.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {

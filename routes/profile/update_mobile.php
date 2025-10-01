@@ -1,4 +1,5 @@
 <?php
+include("../../config/cors.php");
 header('Content-Type: application/json');
 require_once '../../controllers/profile/UpdateMobileController.php';
 

@@ -1,11 +1,11 @@
 <?php
-header('Content-Type: application/json');
-require_once __DIR__ . '/../../controllers/profile/UpdateCategoriesController.php';
+include("../../config/cors.php");
+require_once '../../controllers/profile/UpdateCategoriesController.php';
 
-if ($_SERVER['REQUEST_METHOD'] === 'PATCH') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $data = json_decode(file_get_contents('php://input'), true);
     $user_id = $data['user_id'] ?? '';
-    $category_ids = $data['category_ids'] ?? [];
+    $category_ids = $data['categories'] ?? [];
     $result = UpdateCategoriesController::updateCategories($user_id, $category_ids);
     http_response_code($result['status']);
     echo json_encode($result['body']);

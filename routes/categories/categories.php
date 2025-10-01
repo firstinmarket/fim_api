@@ -1,5 +1,5 @@
 <?php
-header('Content-Type: application/json');
+include("../../config/cors.php");
 require_once __DIR__ . '/../../controllers/categories/CategoryController.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
