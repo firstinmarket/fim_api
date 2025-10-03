@@ -1,27 +1,27 @@
 <?php
-header('Content-Type: application/json');
-require_once __DIR__ . '/../controllers/PostController.php';
+include("../../config/cors.php");
+require_once '../../controllers/posts/PostController.php';
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $data = json_decode(file_get_contents('php://input'), true);
-    $result = PostController::addPost($data);
-    http_response_code($result['status']);
-    echo json_encode($result['body']);
-    exit;
-}
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-    $result = PostController::getPosts();
+    $user_id = isset($_GET['user_id']) ? $_GET['user_id'] : '';
+    if (empty($user_id)) {
+        http_response_code(400);
+        echo json_encode(['error' => 'Missing user_id parameter']);
+        exit;
+    }
+    $result = PostController::getPostsByUserCategories($user_id);
     http_response_code($result['status']);
     echo json_encode($result['body']);
     exit;
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'PATCH') {
+if ($_SERVER['REQUEST_METHOD'] === 'PUT') {
     $data = json_decode(file_get_contents('php://input'), true);
     $post_id = $data['post_id'] ?? '';
     $field = $data['field'] ?? '';
-    $result = PostController::updateCount($post_id, $field);
+    $user_id = $data['user_id'] ?? '';
+    $result = PostController::updateCount($post_id, $field, $user_id);
     http_response_code($result['status']);
     echo json_encode($result['body']);
     exit;
