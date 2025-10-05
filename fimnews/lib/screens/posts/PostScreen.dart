@@ -388,10 +388,8 @@ class _PostScreenState extends State<PostScreen> {
     final fullContent = currentPost['content']?.toString() ?? '';
     final contentWords = fullContent.split(' ');
 
-    // Detect Tamil content using Unicode range for Tamil characters
     final isTamilContent = RegExp(r'[\u0B80-\u0BFF]').hasMatch(fullContent);
-    // Check for long content using both word count and character length
-    // This handles Tamil content better as Tamil words can be longer
+    
     final isLongContent = contentWords.length > 70 || fullContent.length > 500;
     String title = currentPost['title']?.toString() ?? '';
     if (title.length > 47) title = '${title.substring(0, 47)}...';
