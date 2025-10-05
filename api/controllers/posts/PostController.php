@@ -101,7 +101,7 @@ class PostController {
                 $stmt = $pdo->prepare('
                     SELECT p.*, ? AS user_language
                     FROM posts p 
-                    WHERE (p.language = ? OR p.language IS NULL OR p.language = \'\')
+                    WHERE p.language = ?
                     ORDER BY p.created_at DESC
                 ');
                 $stmt->execute([$userLanguage, $userLanguage]);
@@ -134,7 +134,7 @@ class PostController {
             $userData = $userStmt->fetch();
             $userLanguage = $userData ? ($userData['language'] ?? 'english') : 'english';
             
-            // Build the query with language filtering
+            // Build the query with strict language filtering
             $stmt = $pdo->prepare('
                 SELECT p.*, s.name AS category_name,
                        CASE WHEN pl.id IS NOT NULL THEN 1 ELSE 0 END AS is_liked,
@@ -146,7 +146,7 @@ class PostController {
                 LEFT JOIN post_likes pl ON pl.post_id = p.id AND pl.user_id = ?
                 LEFT JOIN saved_counts sc ON sc.post_id = p.id AND sc.user_id = ?
                 WHERE uc.user_id = ? 
-                    AND (p.language = ? OR p.language IS NULL OR p.language = \'\')
+                    AND p.language = ?
                 ORDER BY p.created_at DESC
             ');
             $stmt->execute([$userLanguage, $user_id, $user_id, $user_id, $userLanguage]);
@@ -187,7 +187,7 @@ class PostController {
                 JOIN subcategories s ON p.category_id = s.id
                 LEFT JOIN post_likes pl ON pl.post_id = p.id AND pl.user_id = ?
                 WHERE sc.user_id = ?
-                    AND (p.language = ? OR p.language IS NULL OR p.language = \'\')
+                    AND p.language = ?
                 ORDER BY sc.saved_at DESC
             ');
             $stmt->execute([$userLanguage, $user_id, $user_id, $userLanguage]);
