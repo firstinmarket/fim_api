@@ -4,6 +4,23 @@ require_once '../../controllers/posts/PostController.php';
 
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    // If both post_id and user_id are provided, fetch like/save status
+    if (isset($_GET['post_id']) && isset($_GET['user_id'])) {
+        $post_id = $_GET['post_id'];
+        $user_id = $_GET['user_id'];
+        $status_type = $_GET['status'] ?? 'save'; // 'like' or 'save'
+        
+        if ($status_type === 'like') {
+            $result = PostController::getLikeStatus($post_id, $user_id);
+        } else {
+            $result = PostController::getSaveStatus($post_id, $user_id);
+        }
+        http_response_code($result['status']);
+        echo json_encode($result['body']);
+        exit;
+    }
+    
+    // Otherwise, fetch posts by user categories
     $user_id = isset($_GET['user_id']) ? $_GET['user_id'] : '';
     if (empty($user_id)) {
         http_response_code(400);

@@ -5,7 +5,27 @@ require_once '../../config/db.php';
 
 class PostController {
 
-        public static function getSaveStatus($post_id, $user_id) {
+    public static function getLikeStatus($post_id, $user_id) {
+        $pdo = getDB();
+        // Get likes_count
+        $stmt = $pdo->prepare('SELECT likes_count FROM posts WHERE id = ?');
+        $stmt->execute([$post_id]);
+        $post = $stmt->fetch();
+        $likes_count = $post ? $post['likes_count'] : 0;
+        // Check if user has liked
+        $stmt = $pdo->prepare('SELECT id FROM post_likes WHERE post_id = ? AND user_id = ?');
+        $stmt->execute([$post_id, $user_id]);
+        $is_liked = $stmt->fetch() ? true : false;
+        return [
+            'status' => 200,
+            'body' => [
+                'likes_count' => $likes_count,
+                'is_liked' => $is_liked
+            ]
+        ];
+    }
+
+    public static function getSaveStatus($post_id, $user_id) {
         $pdo = getDB();
         // Get saves_count
         $stmt = $pdo->prepare('SELECT saves_count FROM posts WHERE id = ?');
@@ -13,7 +33,7 @@ class PostController {
         $post = $stmt->fetch();
         $saves_count = $post ? $post['saves_count'] : 0;
         // Check if user has saved
-        $stmt = $pdo->prepare('SELECT id FROM saves_count WHERE post_id = ? AND user_id = ?');
+        $stmt = $pdo->prepare('SELECT id FROM saved_counts WHERE post_id = ? AND user_id = ?');
         $stmt->execute([$post_id, $user_id]);
         $is_saved = $stmt->fetch() ? true : false;
         return [
@@ -76,14 +96,36 @@ class PostController {
     public static function getPostsByUserCategories($user_id) {
         $pdo = getDB();
         $stmt = $pdo->prepare('
-            SELECT p.*, s.name AS category_name
+            SELECT p.*, s.name AS category_name,
+                   CASE WHEN pl.id IS NOT NULL THEN 1 ELSE 0 END AS is_liked,
+                   CASE WHEN sc.id IS NOT NULL THEN 1 ELSE 0 END AS is_saved
             FROM posts p
             JOIN user_categories uc ON uc.subcategory_id = p.category_id
             JOIN subcategories s ON p.category_id = s.id
+            LEFT JOIN post_likes pl ON pl.post_id = p.id AND pl.user_id = ?
+            LEFT JOIN saved_counts sc ON sc.post_id = p.id AND sc.user_id = ?
             WHERE uc.user_id = ?
             ORDER BY p.created_at DESC
         ');
-        $stmt->execute([$user_id]);
+        $stmt->execute([$user_id, $user_id, $user_id]);
+        $posts = $stmt->fetchAll();
+        return ['status' => 200, 'body' => $posts];
+    }
+
+    public static function getSavedPostsByUser($user_id) {
+        $pdo = getDB();
+        $stmt = $pdo->prepare('
+            SELECT p.*, s.name AS category_name, sc.saved_at,
+                   CASE WHEN pl.id IS NOT NULL THEN 1 ELSE 0 END AS is_liked,
+                   1 AS is_saved
+            FROM saved_counts sc
+            JOIN posts p ON sc.post_id = p.id
+            JOIN subcategories s ON p.category_id = s.id
+            LEFT JOIN post_likes pl ON pl.post_id = p.id AND pl.user_id = ?
+            WHERE sc.user_id = ?
+            ORDER BY sc.saved_at DESC
+        ');
+        $stmt->execute([$user_id, $user_id]);
         $posts = $stmt->fetchAll();
         return ['status' => 200, 'body' => $posts];
     }
@@ -122,13 +164,31 @@ class PostController {
     public static function toggleLike($post_id, $user_id, $add = true) {
         $pdo = getDB();
         if ($add) {
-            $update = $pdo->prepare('UPDATE posts SET likes_count = likes_count + 1 WHERE id = ?');
-            $update->execute([$post_id]);
-            return ['status' => 200, 'body' => ['success' => true, 'liked' => true, 'message' => 'Like added']];
+            // Add like if not already liked
+            $stmt = $pdo->prepare('SELECT id FROM post_likes WHERE post_id = ? AND user_id = ?');
+            $stmt->execute([$post_id, $user_id]);
+            if (!$stmt->fetch()) {
+                $stmt = $pdo->prepare('INSERT INTO post_likes (post_id, user_id, saved_at) VALUES (?, ?, NOW())');
+                $stmt->execute([$post_id, $user_id]);
+                $update = $pdo->prepare('UPDATE posts SET likes_count = likes_count + 1 WHERE id = ?');
+                $update->execute([$post_id]);
+                return ['status' => 200, 'body' => ['success' => true, 'liked' => true, 'message' => 'Like added']];
+            } else {
+                return ['status' => 200, 'body' => ['success' => true, 'liked' => true, 'message' => 'Already liked']];
+            }
         } else {
-            $update = $pdo->prepare('UPDATE posts SET likes_count = likes_count - 1 WHERE id = ?');
-            $update->execute([$post_id]);
-            return ['status' => 200, 'body' => ['success' => true, 'liked' => false, 'message' => 'Like removed']];
+            // Remove like if exists
+            $stmt = $pdo->prepare('SELECT id FROM post_likes WHERE post_id = ? AND user_id = ?');
+            $stmt->execute([$post_id, $user_id]);
+            if ($stmt->fetch()) {
+                $stmt = $pdo->prepare('DELETE FROM post_likes WHERE post_id = ? AND user_id = ?');
+                $stmt->execute([$post_id, $user_id]);
+                $update = $pdo->prepare('UPDATE posts SET likes_count = likes_count - 1 WHERE id = ?');
+                $update->execute([$post_id]);
+                return ['status' => 200, 'body' => ['success' => true, 'liked' => false, 'message' => 'Like removed']];
+            } else {
+                return ['status' => 200, 'body' => ['success' => true, 'liked' => false, 'message' => 'Not liked yet']];
+            }
         }
     }
 }
