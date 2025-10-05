@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../services/api_service.dart';
+import '../../services/session_manager.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -57,8 +57,13 @@ class _LoginScreenState extends State<LoginScreen> {
       print('Login response: $response');
 
       if (response['success'] == true && response['user_id'] != null) {
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('user_id', response['user_id'].toString());
+        // Save session using SessionManager
+        await SessionManager.saveLoginSession(
+          userId: response['user_id'].toString(),
+          email: email,
+        );
+
+        debugPrint('User logged in successfully with persistent session');
         if (!mounted) return;
         Navigator.pushReplacementNamed(context, '/profile');
       } else {

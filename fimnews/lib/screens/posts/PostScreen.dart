@@ -389,7 +389,7 @@ class _PostScreenState extends State<PostScreen> {
     final contentWords = fullContent.split(' ');
 
     final isTamilContent = RegExp(r'[\u0B80-\u0BFF]').hasMatch(fullContent);
-    
+
     final isLongContent = contentWords.length > 70 || fullContent.length > 500;
     String title = currentPost['title']?.toString() ?? '';
     if (title.length > 47) title = '${title.substring(0, 47)}...';
@@ -617,10 +617,11 @@ class _PostScreenState extends State<PostScreen> {
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
-          const SizedBox(height: 25),
+          const SizedBox(height: 20),
           Container(
-            height:
-                isLongContent ? MediaQuery.of(context).size.height * 0.3 : null,
+            height: isLongContent
+                ? MediaQuery.of(context).size.height * 0.35
+                : null,
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
               color: const Color(0xFF232A3B).withOpacity(0.5),

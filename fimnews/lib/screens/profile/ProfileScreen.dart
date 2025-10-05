@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:vibration/vibration.dart';
 import '../../services/api_service.dart';
+import '../../services/session_manager.dart';
 import '../components/navigation.dart';
 import '../legal/PrivacyPolicyScreen.dart';
 import '../legal/DisclaimerScreen.dart';
@@ -70,6 +71,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ],
       ),
     );
+  }
+
+  // Helper function to get first letter of user's name
+  String _getFirstLetter(String name) {
+    if (name.isEmpty) return 'U'; // Default 'U' for User
+    return name.trim().substring(0, 1).toUpperCase();
   }
 
   @override
@@ -153,111 +160,117 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
     showDialog(
       context: context,
-      builder: (context) => Dialog(
-        backgroundColor: Colors.transparent,
-        child: Container(
-          width: MediaQuery.of(context).size.width * 0.85,
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: const Color(0xFF1E1E1E).withOpacity(0.95),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFF5F8DFF), width: 1),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon:
-                        const Icon(Icons.close, color: Colors.white, size: 22),
-                  ),
-                ],
-              ),
-              Text(
-                'Edit ${editField[0].toUpperCase() + editField.substring(1)}',
-                style: const TextStyle(
-                  color: Color(0xFF5F8DFF),
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 16),
-              if (field == 'language')
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF232A3B),
-                    borderRadius: BorderRadius.circular(10),
-                    border:
-                        Border.all(color: const Color(0xFF5F8DFF), width: 1),
-                  ),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<String>(
-                      value: (tempValue == 'english' || tempValue == 'tamil')
-                          ? tempValue
-                          : 'english',
-                      isExpanded: true,
-                      dropdownColor: const Color(0xFF232A3B),
-                      style: const TextStyle(color: Colors.white),
-                      icon: const Icon(Icons.arrow_drop_down,
-                          color: Color(0xFF5F8DFF)),
-                      items: const [
-                        DropdownMenuItem(
-                            value: 'english', child: Text('English')),
-                        DropdownMenuItem(value: 'tamil', child: Text('Tamil')),
-                      ],
-                      onChanged: (String? newValue) {
-                        if (newValue != null) {
-                          setState(() {
-                            tempValue = newValue;
-                          });
-                        }
-                      },
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) => Dialog(
+          backgroundColor: Colors.transparent,
+          child: Container(
+            width: MediaQuery.of(context).size.width * 0.85,
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1E1E1E).withOpacity(0.95),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFF5F8DFF), width: 1),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon:
+                          const Icon(Icons.close, color: Colors.white, size: 22),
                     ),
+                  ],
+                ),
+                Text(
+                  'Edit ${editField[0].toUpperCase() + editField.substring(1)}',
+                  style: const TextStyle(
+                    color: Color(0xFF5F8DFF),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
                   ),
-                )
-              else
-                TextField(
-                  controller: TextEditingController(text: tempValue),
-                  onChanged: (value) => tempValue = value,
-                  decoration: InputDecoration(
-                    hintText: 'Enter $editField',
-                    hintStyle: const TextStyle(color: Color(0xFFAAAAAA)),
-                    filled: true,
-                    fillColor: const Color(0xFF232A3B),
-                    border: OutlineInputBorder(
+                ),
+                const SizedBox(height: 16),
+                if (editField == 'language')
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF232A3B),
                       borderRadius: BorderRadius.circular(10),
-                      borderSide:
-                          const BorderSide(color: Color(0xFF5F8DFF), width: 1),
+                      border:
+                          Border.all(color: const Color(0xFF5F8DFF), width: 1),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        value: (tempValue == 'english' || tempValue == 'tamil')
+                            ? tempValue
+                            : 'english',
+                        isExpanded: true,
+                        dropdownColor: const Color(0xFF232A3B),
+                        style: const TextStyle(color: Colors.white),
+                        icon: const Icon(Icons.arrow_drop_down,
+                            color: Color(0xFF5F8DFF)),
+                        items: const [
+                          DropdownMenuItem(
+                              value: 'english', child: Text('English')),
+                          DropdownMenuItem(value: 'tamil', child: Text('Tamil')),
+                        ],
+                        onChanged: (String? newValue) {
+                          if (newValue != null) {
+                            final previousValue = tempValue;
+                            setState(() {
+                              tempValue = newValue;
+                              debugPrint(
+                                  'Language changed from: $previousValue to: $newValue');
+                            });
+                            setModalState(() {}); // Rebuild modal UI
+                          }
+                        },
+                      ),
+                    ),
+                  )
+                else
+                  TextField(
+                    controller: TextEditingController(text: tempValue),
+                    onChanged: (value) => tempValue = value,
+                    decoration: InputDecoration(
+                      hintText: 'Enter $editField',
+                      hintStyle: const TextStyle(color: Color(0xFFAAAAAA)),
+                      filled: true,
+                      fillColor: const Color(0xFF232A3B),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: const BorderSide(
+                            color: Color(0xFF5F8DFF), width: 1),
+                      ),
+                    ),
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                const SizedBox(height: 14),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    updateField();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF5F8DFF),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      side: const BorderSide(color: Color(0xFF5F8DFF), width: 1),
                     ),
                   ),
-                  style: const TextStyle(color: Colors.white),
-                ),
-              const SizedBox(height: 14),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  updateField();
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF5F8DFF),
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    side: const BorderSide(color: Color(0xFF5F8DFF), width: 1),
+                  child: const Text(
+                    'Update',
+                    style: TextStyle(
+                        color: Colors.white, fontWeight: FontWeight.w600),
                   ),
                 ),
-                child: const Text(
-                  'Update',
-                  style: TextStyle(
-                      color: Colors.white, fontWeight: FontWeight.w600),
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -270,12 +283,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
         tempValue = (currentLanguage == 'english' || currentLanguage == 'tamil')
             ? currentLanguage
             : 'english';
+        debugPrint(
+            'ProfileScreen: Language modal - current: $currentLanguage, temp: $tempValue');
       } else {
         tempValue = user[field]?.toString() ?? '';
       }
       fieldModalVisible = true;
       editCategoryModal = false;
       debugPrint('ProfileScreen: Opening field modal for: $field');
+    });
+
+    // Force UI refresh after modal opens
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        setState(() {});
+      }
     });
   }
 
@@ -379,122 +401,168 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
     showDialog(
       context: context,
-      builder: (context) => Dialog(
-        backgroundColor: Colors.transparent,
-        child: Container(
-          width: MediaQuery.of(context).size.width * 0.7,
-          constraints: BoxConstraints(
-            maxHeight: MediaQuery.of(context).size.height * 0.6,
-          ),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: const Color(0xFF1E1E1E).withOpacity(0.98),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFF5F8DFF), width: 1),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon:
-                        const Icon(Icons.close, color: Colors.white, size: 22),
-                  ),
-                ],
-              ),
-              const Text(
-                'Edit Interests',
-                style: TextStyle(
-                  color: Color(0xFF5F8DFF),
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) => Dialog(
+          backgroundColor: Colors.transparent,
+          child: Container(
+            width: MediaQuery.of(context).size.width * 0.7,
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.6,
+            ),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1E1E1E).withOpacity(0.98),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFF5F8DFF), width: 1),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon:
+                          const Icon(Icons.close, color: Colors.white, size: 22),
+                    ),
+                  ],
                 ),
-              ),
-              const SizedBox(height: 10),
-              Expanded(
-                child: SingleChildScrollView(
-                  child: Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: categories.map((cat) {
-                      final isSelected = tempInterests.contains(cat['name']);
-                      return GestureDetector(
-                        onTap: () => toggleInterest(cat['name']),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              vertical: 6, horizontal: 14),
-                          decoration: BoxDecoration(
-                            color: isSelected
-                                ? const Color(0xFF5F8DFF)
-                                : const Color(0xFF232A3B),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                                color: const Color(0xFF5F8DFF), width: 1),
-                          ),
-                          child: Text(
-                            cat['name'],
-                            style: TextStyle(
-                              color: isSelected
-                                  ? Colors.white
-                                  : const Color(0xFF5F8DFF),
-                              fontSize: 15,
-                              fontWeight: FontWeight.bold,
+                const Text(
+                  'Edit Interests',
+                  style: TextStyle(
+                    color: Color(0xFF5F8DFF),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: categories.map((cat) {
+                        final isSelected = tempInterests.contains(cat['name']);
+                        return GestureDetector(
+                          onTap: () {
+                            debugPrint(
+                                'Tapping category: ${cat['name']}, currently selected: $isSelected');
+                            toggleInterest(cat['name']);
+                            setModalState(() {}); // Rebuild modal UI immediately
+                          },
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 250),
+                            curve: Curves.easeInOut,
+                            padding: const EdgeInsets.symmetric(
+                                vertical: 8, horizontal: 16),
+                            decoration: BoxDecoration(
+                              color: tempInterests.contains(cat['name'])
+                                  ? const Color(0xFF5F8DFF)
+                                  : const Color(0xFF232A3B),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                  color: const Color(0xFF5F8DFF),
+                                  width: tempInterests.contains(cat['name'])
+                                      ? 2
+                                      : 1),
+                              boxShadow: tempInterests.contains(cat['name'])
+                                  ? [
+                                      BoxShadow(
+                                        color: const Color(0xFF5F8DFF)
+                                            .withOpacity(0.3),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 2),
+                                      )
+                                    ]
+                                  : null,
+                            ),
+                            child: AnimatedDefaultTextStyle(
+                              duration: const Duration(milliseconds: 250),
+                              style: TextStyle(
+                                color: tempInterests.contains(cat['name'])
+                                    ? Colors.white
+                                    : const Color(0xFF5F8DFF),
+                                fontSize:
+                                    tempInterests.contains(cat['name']) ? 16 : 15,
+                                fontWeight: tempInterests.contains(cat['name'])
+                                    ? FontWeight.w700
+                                    : FontWeight.w600,
+                              ),
+                              child: Text(
+                                cat['name'],
+                              ),
                             ),
                           ),
-                        ),
-                      );
-                    }).toList(),
+                        );
+                      }).toList(),
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 14),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  updateInterests();
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF5F8DFF),
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    side: const BorderSide(color: Color(0xFF5F8DFF), width: 1),
+                const SizedBox(height: 14),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    updateInterests();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF5F8DFF),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      side: const BorderSide(color: Color(0xFF5F8DFF), width: 1),
+                    ),
+                  ),
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                    child: Text(
+                      'Update Interests',
+                      style: TextStyle(
+                          color: Colors.white, fontWeight: FontWeight.w600),
+                    ),
                   ),
                 ),
-                child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                  child: const Text(
-                    'Update Interests',
-                    style: TextStyle(
-                        color: Colors.white, fontWeight: FontWeight.w600),
-                  ),
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
     );
     setState(() {
-      tempInterests = List.from(user['interests']);
+      // Ensure tempInterests is properly initialized with a fresh copy
+      tempInterests = List<String>.from(user['interests'] ?? []);
       editCategoryModal = true;
       fieldModalVisible = false;
-      debugPrint('ProfileScreen: Opening category modal');
+      debugPrint(
+          'ProfileScreen: Opening category modal with ${tempInterests.length} pre-selected interests');
+      debugPrint('ProfileScreen: Initial interests: $tempInterests');
     });
   }
 
   void toggleInterest(String cat) {
+    final wasSelected = tempInterests.contains(cat);
+
     setState(() {
-      tempInterests = tempInterests.contains(cat)
-          ? tempInterests.where((c) => c != cat).toList()
-          : [...tempInterests, cat];
+      if (wasSelected) {
+        // Deselecting - remove from list
+        tempInterests.remove(cat);
+        debugPrint('ProfileScreen: 🔴 DESELECTED interest: $cat');
+      } else {
+        // Selecting - add to list
+        tempInterests.add(cat);
+        debugPrint('ProfileScreen: 🟢 SELECTED interest: $cat');
+      }
       debugPrint(
-          'ProfileScreen: Toggled interest: $cat, new interests: $tempInterests');
+          'ProfileScreen: Current interests count: ${tempInterests.length}');
+      debugPrint('ProfileScreen: All interests: $tempInterests');
     });
+
+    // Add haptic feedback for better user experience
+    try {
+      Vibration.vibrate(duration: 50);
+    } catch (e) {
+      // Ignore if vibration is not available
+    }
   }
 
   void updateInterests() async {
@@ -545,15 +613,58 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (await Vibration.hasVibrator()) {
       Vibration.vibrate(duration: 100);
     }
+
+    // Show confirmation dialog before logout
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirm Logout'),
+        content: const Text('Are you sure you want to logout?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context); // Close confirmation dialog
+              await _performLogout();
+            },
+            child: const Text('Logout', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _performLogout() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove('user_id');
-      debugPrint('ProfileScreen: Logged out, user_id cleared');
+      // Show loading indicator
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(child: CircularProgressIndicator()),
+      );
+
+      // Clear all session data using SessionManager
+      await SessionManager.clearSession();
+
+      // Call logout API to clear server session
+      try {
+        await ApiService.apiPost('auth/logout.php', {});
+      } catch (e) {
+        debugPrint('Server logout error (non-critical): $e');
+      }
+
+      Navigator.pop(context); // Close loading dialog
+
+      debugPrint('ProfileScreen: Complete logout - all data cleared');
       _showSuccessDialog('Logged Out', 'You have been logged out successfully',
           onOk: () {
-        Navigator.pushReplacementNamed(context, '/login');
+        Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
       });
     } catch (err) {
+      Navigator.pop(context); // Close loading dialog if open
       debugPrint('ProfileScreen: Logout error: $err');
       _showErrorDialog('Error during logout');
     }
@@ -592,7 +703,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         centerTitle: true,
         automaticallyImplyLeading: false,
         title: const Text(
-          'FIM NEWS',
+          'FIM TECH',
           style: TextStyle(
             fontSize: 22,
             fontWeight: FontWeight.w700,
@@ -623,16 +734,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(12),
+                      width: 64,
+                      height: 64,
                       decoration: BoxDecoration(
-                        color: const Color(0xFF232A3B),
-                        borderRadius: BorderRadius.circular(50),
-                        border: Border.all(color: const Color(0xFF5F8DFF)),
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF5F8DFF), Color(0xFF4A73E8)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(32),
+                        border: Border.all(
+                            color: const Color(0xFF5F8DFF), width: 2),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF5F8DFF).withOpacity(0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                       ),
-                      child: const Icon(
-                        Icons.person,
-                        color: Color(0xFF5F8DFF),
-                        size: 40,
+                      child: Center(
+                        child: Text(
+                          _getFirstLetter(user['name'] ?? ''),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 12),

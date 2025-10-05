@@ -1,8 +1,43 @@
 import 'package:flutter/material.dart';
 import 'package:vibration/vibration.dart';
+import '../services/session_manager.dart';
 
-class MainScreen extends StatelessWidget {
+class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
+
+  @override
+  State<MainScreen> createState() => _MainScreenState();
+}
+
+class _MainScreenState extends State<MainScreen> {
+  @override
+  void initState() {
+    super.initState();
+    _checkLoginStatus();
+  }
+
+  Future<void> _checkLoginStatus() async {
+    try {
+      // Check if user has valid session
+      final isValidSession = await SessionManager.validateAndRefreshSession();
+
+      if (isValidSession) {
+        final userId = await SessionManager.getCurrentUserId();
+        debugPrint('User already logged in with ID: $userId');
+
+        // Add a small delay to show splash screen briefly
+        await Future.delayed(const Duration(seconds: 1));
+
+        if (mounted) {
+          Navigator.pushReplacementNamed(context, '/profile');
+        }
+      } else {
+        debugPrint('No valid session found, showing main screen');
+      }
+    } catch (e) {
+      debugPrint('Error checking login status: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -51,7 +86,7 @@ class MainScreen extends StatelessWidget {
                   ElevatedButton(
                     onPressed: () async {
                       // Trigger vibration
-                      if (await Vibration.hasVibrator() ?? false) {
+                      if (await Vibration.hasVibrator() == true) {
                         Vibration.vibrate(duration: 100); // Vibrate for 100ms
                       }
                       // Navigate to login screen
