@@ -9,6 +9,7 @@ class ProfileController {
     u.`mobile`, 
     u.`email`, 
     u.`bio`,
+    u.`language`,
     uc.`id` AS category_id,
     uc.`subcategory_id`, 
     sc.`name` AS subcategory_name,
@@ -27,6 +28,7 @@ WHERE u.`id` = ?');
             'mobile' => $rows[0]['mobile'],
             'email' => $rows[0]['email'],
             'bio' => $rows[0]['bio'],
+            'language' => $rows[0]['language'] ,
         ];
         $categories = [];
         foreach ($rows as $row) {

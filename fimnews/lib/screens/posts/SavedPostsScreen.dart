@@ -222,25 +222,17 @@ class _SavedPostsScreenState extends State<SavedPostsScreen> {
 
   Widget _buildPostCard(Map<String, dynamic> currentPost) {
     final postId = currentPost['id']?.toString() ?? '';
+    if (postId.isEmpty) return const SizedBox.shrink();
+
     final isLiked = likedPostIds.contains(postId);
     final isSaved = savedPostIds.contains(postId);
 
-    int maxWords = 50;
-    final screenWidth = MediaQuery.of(context).size.width;
-    if (screenWidth > 600) {
-      maxWords = 100;
-    } else if (screenWidth > 400) {
-      maxWords = 50;
-    } else if (screenWidth > 300) {
-      maxWords = 40;
-    }
+    final fullContent = currentPost['content']?.toString() ?? '';
+    final contentWords = fullContent.split(' ');
 
-    final content = (currentPost['content']
-            ?.toString()
-            .split(' ')
-            .take(maxWords)
-            .join(' ') ??
-        '');
+    // Detect Tamil content using Unicode range for Tamil characters
+    final isTamilContent = RegExp(r'[\u0B80-\u0BFF]').hasMatch(fullContent);
+    final isLongContent = contentWords.length > 30 || fullContent.length > 300;
     String title = currentPost['title']?.toString() ?? '';
     if (title.length > 47) title = '${title.substring(0, 47)}...';
 
@@ -251,7 +243,6 @@ class _SavedPostsScreenState extends State<SavedPostsScreen> {
     }
 
     final updatedAt = currentPost['created_at']?.toString() ?? '';
-    final savedAt = currentPost['saved_at']?.toString() ?? '';
     final viewsCount = currentPost['views_count']?.toString() ?? '0';
     final likesCount = currentPost['likes_count']?.toString() ?? '0';
     String savesCount = currentPost['saves_count']?.toString() ?? '0';
@@ -260,7 +251,6 @@ class _SavedPostsScreenState extends State<SavedPostsScreen> {
     }
 
     // Calculate time ago for when it was saved
-  
 
     // Calculate time ago for post creation
     String timeAgo = '';
@@ -290,7 +280,6 @@ class _SavedPostsScreenState extends State<SavedPostsScreen> {
       child: Column(
         children: [
           const SizedBox(height: 8),
-
           if (imageUrl.isNotEmpty)
             Stack(
               children: [
@@ -504,22 +493,42 @@ class _SavedPostsScreenState extends State<SavedPostsScreen> {
           ),
           const SizedBox(height: 10),
           Container(
+            height: isLongContent
+                ? MediaQuery.of(context).size.height * 0.3
+                : null, // Responsive height for long content
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
               color: const Color(0xFF232A3B).withOpacity(0.5),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Text(
-              content,
-              style: const TextStyle(
-                fontSize: 14.2,
-                color: Color(0xFFCCCCCC),
-                height: 1.7,
-              ),
-              textAlign: TextAlign.justify,
-              maxLines: 10,
-              overflow: TextOverflow.ellipsis,
-            ),
+            child: isLongContent
+                ? Scrollbar(
+                    thumbVisibility: true,
+                    thickness: 4,
+                    radius: const Radius.circular(4),
+                    child: SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      padding: const EdgeInsets.only(right: 8),
+                      child: Text(
+                        fullContent,
+                        style: TextStyle(
+                          fontSize: isTamilContent ? 12.0 : 14.2,
+                          color: Color(0xFFCCCCCC),
+                          height: 1.7,
+                        ),
+                        textAlign: TextAlign.justify,
+                      ),
+                    ),
+                  )
+                : Text(
+                    fullContent,
+                    style: TextStyle(
+                      fontSize: isTamilContent ? 12.0 : 14.2,
+                      color: Color(0xFFCCCCCC),
+                      height: 1.7,
+                    ),
+                    textAlign: TextAlign.justify,
+                  ),
           ),
         ],
       ),
@@ -574,7 +583,6 @@ class _SavedPostsScreenState extends State<SavedPostsScreen> {
                 children: [
                   Row(
                     children: [
-                   
                       const SizedBox(width: 16),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,

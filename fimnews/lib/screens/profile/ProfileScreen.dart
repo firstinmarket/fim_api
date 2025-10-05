@@ -3,6 +3,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:vibration/vibration.dart';
 import '../../services/api_service.dart';
 import '../components/navigation.dart';
+import '../legal/PrivacyPolicyScreen.dart';
+import '../legal/DisclaimerScreen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -18,6 +20,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     'email': '',
     'phone': '',
     'bio': '',
+    'language': '',
     'interests': [],
   };
   bool fieldModalVisible = false;
@@ -104,6 +107,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             'email': userInfo['email'] ?? '',
             'phone': userInfo['mobile'] ?? '',
             'bio': userInfo['bio'] ?? '',
+            'language': userInfo['language'] ?? 'english',
             'interests': List<String>.from(
               categories
                   .map((cat) => cat['subcategory_name'] ?? '')
@@ -181,22 +185,58 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              TextField(
-                controller: TextEditingController(text: tempValue),
-                onChanged: (value) => tempValue = value,
-                decoration: InputDecoration(
-                  hintText: 'Enter $editField',
-                  hintStyle: const TextStyle(color: Color(0xFFAAAAAA)),
-                  filled: true,
-                  fillColor: const Color(0xFF232A3B),
-                  border: OutlineInputBorder(
+              if (field == 'language')
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF232A3B),
                     borderRadius: BorderRadius.circular(10),
-                    borderSide:
-                        const BorderSide(color: Color(0xFF5F8DFF), width: 1),
+                    border:
+                        Border.all(color: const Color(0xFF5F8DFF), width: 1),
                   ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      value: (tempValue == 'english' || tempValue == 'tamil')
+                          ? tempValue
+                          : 'english',
+                      isExpanded: true,
+                      dropdownColor: const Color(0xFF232A3B),
+                      style: const TextStyle(color: Colors.white),
+                      icon: const Icon(Icons.arrow_drop_down,
+                          color: Color(0xFF5F8DFF)),
+                      items: const [
+                        DropdownMenuItem(
+                            value: 'english', child: Text('English')),
+                        DropdownMenuItem(value: 'tamil', child: Text('Tamil')),
+                      ],
+                      onChanged: (String? newValue) {
+                        if (newValue != null) {
+                          setState(() {
+                            tempValue = newValue;
+                          });
+                        }
+                      },
+                    ),
+                  ),
+                )
+              else
+                TextField(
+                  controller: TextEditingController(text: tempValue),
+                  onChanged: (value) => tempValue = value,
+                  decoration: InputDecoration(
+                    hintText: 'Enter $editField',
+                    hintStyle: const TextStyle(color: Color(0xFFAAAAAA)),
+                    filled: true,
+                    fillColor: const Color(0xFF232A3B),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide:
+                          const BorderSide(color: Color(0xFF5F8DFF), width: 1),
+                    ),
+                  ),
+                  style: const TextStyle(color: Colors.white),
                 ),
-                style: const TextStyle(color: Colors.white),
-              ),
               const SizedBox(height: 14),
               ElevatedButton(
                 onPressed: () {
@@ -224,7 +264,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
     setState(() {
       editField = field;
-      tempValue = user[field];
+      if (field == 'language') {
+        // Ensure language value is valid for dropdown
+        String currentLanguage = user[field]?.toString() ?? 'english';
+        tempValue = (currentLanguage == 'english' || currentLanguage == 'tamil')
+            ? currentLanguage
+            : 'english';
+      } else {
+        tempValue = user[field]?.toString() ?? '';
+      }
       fieldModalVisible = true;
       editCategoryModal = false;
       debugPrint('ProfileScreen: Opening field modal for: $field');
@@ -235,7 +283,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (editField == 'name' ||
         editField == 'phone' ||
         editField == 'bio' ||
-        editField == 'email') {
+        editField == 'email' ||
+        editField == 'language') {
       if (editField == 'phone' &&
           (tempValue.isEmpty || tempValue.length != 10)) {
         _showErrorDialog('Mobile number must be exactly 10 digits');
@@ -287,6 +336,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
         payload['new_email'] = tempValue;
         title = 'Email Updated';
         successMsg = 'Email updated successfully';
+      } else if (editField == 'language') {
+        endpoint = 'profile/update_language.php';
+        payload['new_language'] = tempValue;
+        title = 'Language Updated';
+        successMsg = 'Language updated successfully';
       }
       try {
         debugPrint('ProfileScreen: Updating $editField with payload: $payload');
@@ -295,7 +349,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           debugPrint('ProfileScreen: Update successful, response: $response');
           _showSuccessDialog(title, response['message'] ?? successMsg);
           setState(() {
-            user = {...user, editField: tempValue};
+            user[editField] = tempValue;
           });
         } else {
           debugPrint('ProfileScreen: Update failed, response: $response');
@@ -312,7 +366,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       }
     } else {
       setState(() {
-        user = {...user, editField: tempValue};
+        user[editField] = tempValue;
         fieldModalVisible = false;
         debugPrint('ProfileScreen: Updated $editField locally: $tempValue');
       });
@@ -505,6 +559,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  void _openPrivacyPolicy() async {
+    if (await Vibration.hasVibrator()) {
+      Vibration.vibrate(duration: 100);
+    }
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const PrivacyPolicyScreen(),
+      ),
+    );
+  }
+
+  void _openDisclaimer() async {
+    if (await Vibration.hasVibrator()) {
+      Vibration.vibrate(duration: 100);
+    }
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const DisclaimerScreen(),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     debugPrint('ProfileScreen: Building UI');
@@ -516,9 +592,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
         centerTitle: true,
         automaticallyImplyLeading: false,
         title: const Text(
-          'FIM TECH',
+          'FIM NEWS',
           style: TextStyle(
-            fontSize: 20,
+            fontSize: 22,
             fontWeight: FontWeight.w700,
             color: Color(0xFF5F8DFF),
           ),
@@ -620,11 +696,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ],
                       ),
                       const SizedBox(height: 16),
-                      _buildDetailRow('Email', user['email'], 'email'),
+                      _buildDetailRow(
+                          'Email', user['email']?.toString(), 'email'),
                       const SizedBox(height: 12),
-                      _buildDetailRow('Phone', user['phone'], 'phone'),
+                      _buildDetailRow(
+                          'Phone', user['phone']?.toString(), 'phone'),
                       const SizedBox(height: 12),
-                      _buildDetailRow('Bio', user['bio'], 'bio'),
+                      _buildDetailRow('Bio', user['bio']?.toString(), 'bio'),
+                      const SizedBox(height: 12),
+                      _buildDetailRow(
+                          'Language',
+                          user['language']?.toString().isNotEmpty == true
+                              ? '${user['language']?.toString()[0].toUpperCase()}${user['language']?.toString().substring(1).toLowerCase()}'
+                              : 'Not set',
+                          'language'),
                     ],
                   ),
                 ),
@@ -684,6 +769,91 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ],
                   ),
                 ),
+
+                // Version and Legal Section
+                const SizedBox(height: 40),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF232A3B),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                        color: const Color(0xFF5F8DFF).withOpacity(0.3)),
+                  ),
+                  child: Column(
+                    children: [
+                      // Privacy Policy and Disclaimer Links
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          GestureDetector(
+                            onTap: () => _openPrivacyPolicy(),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 10),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF5F8DFF).withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                    color: const Color(0xFF5F8DFF), width: 1),
+                              ),
+                              child: const Text(
+                                'Privacy Policy',
+                                style: TextStyle(
+                                  color: Color(0xFF5F8DFF),
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () => _openDisclaimer(),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 10),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF5F8DFF).withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                    color: const Color(0xFF5F8DFF), width: 1),
+                              ),
+                              child: const Text(
+                                'Disclaimer',
+                                style: TextStyle(
+                                  color: Color(0xFF5F8DFF),
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // App Version
+                      const Text(
+                        'Version 1.0.0',
+                        style: TextStyle(
+                          color: Color(0xFFAAAAAA),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      const Text(
+                        '© 2025 FIM TECH',
+                        style: TextStyle(
+                          color: Color(0xFFAAAAAA),
+                          fontSize: 10,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
               ],
             ),
           ),
@@ -693,7 +863,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildDetailRow(String label, String value, String field) {
+  Widget _buildDetailRow(String label, String? value, String field) {
+    final displayValue = value ?? 'Not set';
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Column(
@@ -722,7 +893,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           const SizedBox(height: 4),
           Text(
-            value,
+            displayValue,
             style: const TextStyle(
               color: Color(0xFFEEEEEE),
               fontSize: 15,

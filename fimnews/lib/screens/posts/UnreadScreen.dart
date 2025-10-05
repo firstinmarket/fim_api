@@ -228,7 +228,6 @@ class _UnreadScreenState extends State<UnreadScreen> {
         return postId.isNotEmpty && !readPostIds.contains(postId);
       }).toList();
 
-
       // Clear existing sets before rebuilding
       likedPostIds.clear();
       savedPostIds.clear();
@@ -295,25 +294,19 @@ class _UnreadScreenState extends State<UnreadScreen> {
 
   Widget _buildPostCard(Map<String, dynamic> currentPost) {
     final postId = currentPost['id']?.toString() ?? '';
+    if (postId.isEmpty) return const SizedBox.shrink();
+
     final isLiked = likedPostIds.contains(postId);
     final isSaved = savedPostIds.contains(postId);
 
-    int maxWords = 50;
-    final screenWidth = MediaQuery.of(context).size.width;
-    if (screenWidth > 600) {
-      maxWords = 100;
-    } else if (screenWidth > 400) {
-      maxWords = 50;
-    } else if (screenWidth > 300) {
-      maxWords = 40;
-    }
+    final fullContent = currentPost['content']?.toString() ?? '';
+    final contentWords = fullContent.split(' ');
 
-    final content = (currentPost['content']
-            ?.toString()
-            .split(' ')
-            .take(maxWords)
-            .join(' ') ??
-        '');
+    // Detect Tamil content using Unicode range for Tamil characters
+    final isTamilContent = RegExp(r'[\u0B80-\u0BFF]').hasMatch(fullContent);
+    // Check for long content using both word count and character length
+    // This handles Tamil content better as Tamil words can be longer
+    final isLongContent = contentWords.length > 50 || fullContent.length > 350;
     String title = currentPost['title']?.toString() ?? '';
     if (title.length > 47) title = '${title.substring(0, 47)}...';
 
@@ -359,7 +352,6 @@ class _UnreadScreenState extends State<UnreadScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 8),
-
           if (imageUrl.isNotEmpty)
             Stack(
               children: [
@@ -538,22 +530,42 @@ class _UnreadScreenState extends State<UnreadScreen> {
           ),
           const SizedBox(height: 10),
           Container(
+            height: isLongContent
+                ? MediaQuery.of(context).size.height * 0.3
+                : null, // Responsive height for long content
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
               color: const Color(0xFF232A3B).withOpacity(0.5),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Text(
-              content,
-              style: const TextStyle(
-                fontSize: 14.2,
-                color: Color(0xFFCCCCCC),
-                height: 1.7,
-              ),
-              textAlign: TextAlign.justify,
-              maxLines: 10,
-              overflow: TextOverflow.ellipsis,
-            ),
+            child: isLongContent
+                ? Scrollbar(
+                    thumbVisibility: true,
+                    thickness: 4,
+                    radius: const Radius.circular(4),
+                    child: SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      padding: const EdgeInsets.only(right: 8),
+                      child: Text(
+                        fullContent,
+                        style: TextStyle(
+                          fontSize: isTamilContent ? 12.0 : 14.2,
+                          color: Color(0xFFCCCCCC),
+                          height: 1.7,
+                        ),
+                        textAlign: TextAlign.justify,
+                      ),
+                    ),
+                  )
+                : Text(
+                    fullContent,
+                    style: TextStyle(
+                      fontSize: isTamilContent ? 12.0 : 14.2,
+                      color: Color(0xFFCCCCCC),
+                      height: 1.7,
+                    ),
+                    textAlign: TextAlign.justify,
+                  ),
           ),
         ],
       ),
@@ -608,7 +620,6 @@ class _UnreadScreenState extends State<UnreadScreen> {
                 children: [
                   Row(
                     children: [
-                     
                       const SizedBox(width: 16),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -625,7 +636,7 @@ class _UnreadScreenState extends State<UnreadScreen> {
                             '${unreadPosts.length} new posts',
                             style: TextStyle(
                               fontSize: 12,
-                              color:  Color(0xFF5F8DFF),
+                              color: Color(0xFF5F8DFF),
                               fontWeight: FontWeight.w500,
                             ),
                           ),

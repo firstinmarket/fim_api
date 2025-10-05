@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:vibration/vibration.dart';
 import 'package:share_plus/share_plus.dart';
-import 'dart:convert';
 import '../../services/api_service.dart';
 import '../components/navigation.dart';
 import 'UnreadScreen.dart';
@@ -20,6 +18,7 @@ class _PostScreenState extends State<PostScreen> {
   Set<String> likedPostIds = <String>{};
   Set<String> savedPostIds = <String>{};
   Set<String> readPostIds = <String>{};
+  Set<String> viewedPostIds = <String>{}; // Track viewed posts for view count
   List<String> categories = [];
   List<Map<String, dynamic>> posts = [];
   int currentIndex = 0;
@@ -33,12 +32,12 @@ class _PostScreenState extends State<PostScreen> {
   bool showActions = true;
   int unreadCount = 0;
   final ScrollController _scrollController = ScrollController();
-  double _scrollOffset = 0.0;
 
   @override
   void initState() {
     super.initState();
     loadReadPostIds();
+    loadViewedPostIds();
     fetchPostsAndCategories(showLoading: true);
 
     _pageController.addListener(() {
@@ -50,16 +49,12 @@ class _PostScreenState extends State<PostScreen> {
         final postId = filteredPosts[currentIndex]['id']?.toString() ?? '';
         if (postId.isNotEmpty) {
           _markPostAsRead(postId);
-          _updatePostCount(postId, 'views_count');
+          _markPostAsViewed(postId);
         }
       }
     });
 
     _scrollController.addListener(() {
-      setState(() {
-        _scrollOffset = _scrollController.offset;
-      });
-
       // Hide/show actions based on scroll direction with animation
       if (_scrollController.position.userScrollDirection ==
           ScrollDirection.reverse) {
@@ -84,16 +79,41 @@ class _PostScreenState extends State<PostScreen> {
 
   // Load read post IDs from SharedPreferences
   Future<void> loadReadPostIds() async {
-    final prefs = await SharedPreferences.getInstance();
-    final readIds = prefs.getStringList('read_post_ids') ?? [];
-    setState(() {
-      readPostIds = readIds.toSet();
-    });
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final readIds = prefs.getStringList('read_post_ids') ?? [];
+      setState(() {
+        readPostIds = readIds.toSet();
+      });
+    } catch (e) {
+      debugPrint('Error loading read post IDs: $e');
+      setState(() {
+        readPostIds = <String>{};
+      });
+    }
     debugPrint('Loaded read post IDs: $readPostIds');
+  }
+
+  // Load viewed post IDs from SharedPreferences
+  Future<void> loadViewedPostIds() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final viewedIds = prefs.getStringList('viewed_post_ids') ?? [];
+      setState(() {
+        viewedPostIds = viewedIds.toSet();
+      });
+    } catch (e) {
+      debugPrint('Error loading viewed post IDs: $e');
+      setState(() {
+        viewedPostIds = <String>{};
+      });
+    }
+    debugPrint('Loaded viewed post IDs: $viewedPostIds');
   }
 
   // Mark a post as read and save to SharedPreferences
   Future<void> _markPostAsRead(String postId) async {
+    if (postId.isEmpty) return;
     if (!readPostIds.contains(postId)) {
       setState(() {
         readPostIds.add(postId);
@@ -106,6 +126,24 @@ class _PostScreenState extends State<PostScreen> {
 
       // Update unread count
       _calculateUnreadCount();
+    }
+  }
+
+  // Mark a post as viewed and increment view count only once per device
+  Future<void> _markPostAsViewed(String postId) async {
+    if (postId.isEmpty) return;
+    if (!viewedPostIds.contains(postId)) {
+      setState(() {
+        viewedPostIds.add(postId);
+      });
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setStringList('viewed_post_ids', viewedPostIds.toList());
+      debugPrint(
+          'Marked post $postId as viewed. Total viewed: ${viewedPostIds.length}');
+
+      // Only increment view count if this is the first time viewing this post
+      await _updatePostCount(postId, 'views_count');
     }
   }
 
@@ -183,7 +221,8 @@ class _PostScreenState extends State<PostScreen> {
         }
 
         // Update count in local posts list
-        final postIndex = posts.indexWhere((p) => p['id']?.toString() == postId);
+        final postIndex =
+            posts.indexWhere((p) => p['id']?.toString() == postId);
         if (postIndex != -1) {
           final post = posts[postIndex];
           final currentSaves =
@@ -198,7 +237,8 @@ class _PostScreenState extends State<PostScreen> {
         }
         debugPrint('Save toggled successfully for post $postId');
       } else {
-        debugPrint('Save toggle failed: ${response['message'] ?? 'Unknown error'}');
+        debugPrint(
+            'Save toggle failed: ${response['message'] ?? 'Unknown error'}');
       }
     } catch (e) {
       debugPrint('Error toggling save: $e');
@@ -229,7 +269,6 @@ class _PostScreenState extends State<PostScreen> {
     }
   }
 
-
   Future<void> fetchPostsAndCategories({bool showLoading = true}) async {
     if (showLoading) {
       setState(() => loading = true);
@@ -256,9 +295,9 @@ class _PostScreenState extends State<PostScreen> {
             .toList();
       }
 
-      // Clear existing sets before rebuilding
-      likedPostIds.clear();
-      savedPostIds.clear();
+      // Clear existing sets before rebuilding (ensure they exist)
+      likedPostIds = <String>{};
+      savedPostIds = <String>{};
 
       // Build like/save status from posts data (no separate API calls needed)
       for (final post in posts) {
@@ -341,23 +380,19 @@ class _PostScreenState extends State<PostScreen> {
 
   Widget _buildPostCard(Map<String, dynamic> currentPost) {
     final postId = currentPost['id']?.toString() ?? '';
+    if (postId.isEmpty) return const SizedBox.shrink();
+
     final isLiked = likedPostIds.contains(postId);
     final isSaved = savedPostIds.contains(postId);
-    int maxWords = 50;
-    final screenWidth = MediaQuery.of(context).size.width;
-    if (screenWidth > 600) {
-      maxWords = 100;
-    } else if (screenWidth > 400) {
-      maxWords = 50;
-    } else if (screenWidth > 300) {
-      maxWords = 40;
-    }
-    final content = (currentPost['content']
-            ?.toString()
-            .split(' ')
-            .take(maxWords)
-            .join(' ') ??
-        '');
+
+    final fullContent = currentPost['content']?.toString() ?? '';
+    final contentWords = fullContent.split(' ');
+
+    // Detect Tamil content using Unicode range for Tamil characters
+    final isTamilContent = RegExp(r'[\u0B80-\u0BFF]').hasMatch(fullContent);
+    // Check for long content using both word count and character length
+    // This handles Tamil content better as Tamil words can be longer
+    final isLongContent = contentWords.length > 70 || fullContent.length > 500;
     String title = currentPost['title']?.toString() ?? '';
     if (title.length > 47) title = '${title.substring(0, 47)}...';
 
@@ -584,24 +619,43 @@ class _PostScreenState extends State<PostScreen> {
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 25),
           Container(
-            padding: const EdgeInsets.all(6),
+            height:
+                isLongContent ? MediaQuery.of(context).size.height * 0.3 : null,
+            padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
               color: const Color(0xFF232A3B).withOpacity(0.5),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Text(
-              content,
-              style: const TextStyle(
-                fontSize: 14.2,
-                color: Color(0xFFCCCCCC),
-                height: 1.7,
-              ),
-              textAlign: TextAlign.justify,
-              maxLines: 10,
-              overflow: TextOverflow.ellipsis,
-            ),
+            child: isLongContent
+                ? Scrollbar(
+                    thumbVisibility: true,
+                    thickness: 4,
+                    radius: const Radius.circular(4),
+                    child: SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      padding: const EdgeInsets.only(right: 8),
+                      child: Text(
+                        fullContent,
+                        style: TextStyle(
+                          fontSize: isTamilContent ? 12.0 : 14.2,
+                          color: Color(0xFFCCCCCC),
+                          height: 1.7,
+                        ),
+                        textAlign: TextAlign.justify,
+                      ),
+                    ),
+                  )
+                : Text(
+                    fullContent,
+                    style: TextStyle(
+                      fontSize: isTamilContent ? 12.0 : 14.2,
+                      color: Color(0xFFCCCCCC),
+                      height: 1.7,
+                    ),
+                    textAlign: TextAlign.justify,
+                  ),
           ),
         ],
       ),

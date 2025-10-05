@@ -12,7 +12,10 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _forgotEmailController = TextEditingController();
+  final _newPasswordController = TextEditingController();
   String _emailError = '';
+  bool _isResettingPassword = false;
 
   Future<void> _handleLogin() async {
     final email = _emailController.text;
@@ -35,7 +38,6 @@ class _LoginScreenState extends State<LoginScreen> {
         if (!mounted) return;
         Navigator.pushReplacementNamed(context, '/profile');
       } else {
- 
         final errorMsg = response['error'] ?? 'Invalid credentials';
         _showErrorDialog(errorMsg);
       }
@@ -54,6 +56,160 @@ class _LoginScreenState extends State<LoginScreen> {
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showSuccessDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Success'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _handleForgotPassword() async {
+    final email = _forgotEmailController.text.trim();
+    final newPassword = _newPasswordController.text.trim();
+
+    if (email.isEmpty || newPassword.isEmpty) {
+      _showErrorDialog('Please enter both email and new password');
+      return;
+    }
+
+    if (!RegExp(r'^\S+@\S+\.\S+$').hasMatch(email)) {
+      _showErrorDialog('Please enter a valid email address');
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      _showErrorDialog('Password must be at least 6 characters long');
+      return;
+    }
+
+    setState(() {
+      _isResettingPassword = true;
+    });
+
+    try {
+      final response = await ApiService.apiPost('auth/forgot_password.php', {
+        'email': email,
+        'new_password': newPassword,
+      });
+
+      setState(() {
+        _isResettingPassword = false;
+      });
+
+      if (response['success'] == true) {
+        Navigator.pop(context); 
+        _showSuccessDialog(
+            'Password updated successfully! You can now login with your new password.');
+        
+        _forgotEmailController.clear();
+        _newPasswordController.clear();
+      } else {
+        final errorMsg = response['error'] ?? 'Failed to reset password';
+        _showErrorDialog(errorMsg);
+      }
+    } catch (err) {
+      setState(() {
+        _isResettingPassword = false;
+      });
+      _showErrorDialog('Network error. Please check your connection.');
+    }
+  }
+
+  void _showForgotPasswordDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text(
+          'Reset Password',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF333333),
+          ),
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Enter your email and new password to reset your account password.',
+                style: TextStyle(color: Color(0xFF666666)),
+              ),
+              const SizedBox(height: 20),
+              // Email input
+              TextFormField(
+                controller: _forgotEmailController,
+                keyboardType: TextInputType.emailAddress,
+                decoration: InputDecoration(
+                  labelText: 'Email',
+                  hintText: 'Enter your email',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  contentPadding: const EdgeInsets.all(12),
+                ),
+              ),
+              const SizedBox(height: 16),
+              // New password input
+              TextFormField(
+                controller: _newPasswordController,
+                obscureText: true,
+                decoration: InputDecoration(
+                  labelText: 'New Password',
+                  hintText: 'Enter new password (min 6 characters)',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  contentPadding: const EdgeInsets.all(12),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _forgotEmailController.clear();
+              _newPasswordController.clear();
+            },
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: _isResettingPassword ? null : _handleForgotPassword,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF5F8DFF),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: _isResettingPassword
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  )
+                : const Text(
+                    'Update Password',
+                    style: TextStyle(color: Colors.white),
+                  ),
           ),
         ],
       ),
@@ -179,9 +335,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 24),
                     // Forgot Password
                     TextButton(
-                      onPressed: () {
-                        // Implement forgot password functionality
-                      },
+                      onPressed: _showForgotPasswordDialog,
                       child: const Text(
                         'Forgot Password?',
                         style: TextStyle(
@@ -220,6 +374,8 @@ class _LoginScreenState extends State<LoginScreen> {
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _forgotEmailController.dispose();
+    _newPasswordController.dispose();
     super.dispose();
   }
 }
