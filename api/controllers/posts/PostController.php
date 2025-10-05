@@ -86,48 +86,126 @@ class PostController {
         return ['status' => 201, 'body' => ['success' => true, 'message' => 'Post added successfully']];
     }
 
-    public static function getPosts() {
+    public static function getPosts($user_id = null) {
         $pdo = getDB();
-        $stmt = $pdo->query('SELECT * FROM posts ORDER BY created_at DESC');
-        $posts = $stmt->fetchAll();
-        return ['status' => 200, 'body' => $posts];
+        
+        try {
+            // If user_id is provided, filter by user's language preference
+            if ($user_id) {
+                // Get the user's language preference
+                $userStmt = $pdo->prepare('SELECT language FROM users WHERE id = ?');
+                $userStmt->execute([$user_id]);
+                $userData = $userStmt->fetch();
+                $userLanguage = $userData ? ($userData['language'] ?? 'english') : 'english';
+                
+                $stmt = $pdo->prepare('
+                    SELECT p.*, ? AS user_language
+                    FROM posts p 
+                    WHERE (p.language = ? OR p.language IS NULL OR p.language = \'\')
+                    ORDER BY p.created_at DESC
+                ');
+                $stmt->execute([$userLanguage, $userLanguage]);
+                
+                error_log("PostController: Fetching all posts for user $user_id with language preference: $userLanguage");
+            } else {
+                // No user specified, return all posts
+                $stmt = $pdo->query('SELECT * FROM posts ORDER BY created_at DESC');
+            }
+            
+            $posts = $stmt->fetchAll();
+            return ['status' => 200, 'body' => $posts];
+            
+        } catch (PDOException $e) {
+            error_log("PostController: Database error in getPosts: " . $e->getMessage());
+            return ['status' => 500, 'body' => ['error' => 'Database error occurred']];
+        } catch (Exception $e) {
+            error_log("PostController: General error in getPosts: " . $e->getMessage());
+            return ['status' => 500, 'body' => ['error' => 'An error occurred while fetching posts']];
+        }
     }
 
     public static function getPostsByUserCategories($user_id) {
         $pdo = getDB();
-        $stmt = $pdo->prepare('
-            SELECT p.*, s.name AS category_name,
-                   CASE WHEN pl.id IS NOT NULL THEN 1 ELSE 0 END AS is_liked,
-                   CASE WHEN sc.id IS NOT NULL THEN 1 ELSE 0 END AS is_saved
-            FROM posts p
-            JOIN user_categories uc ON uc.subcategory_id = p.category_id
-            JOIN subcategories s ON p.category_id = s.id
-            LEFT JOIN post_likes pl ON pl.post_id = p.id AND pl.user_id = ?
-            LEFT JOIN saved_counts sc ON sc.post_id = p.id AND sc.user_id = ?
-            WHERE uc.user_id = ?
-            ORDER BY p.created_at DESC
-        ');
-        $stmt->execute([$user_id, $user_id, $user_id]);
-        $posts = $stmt->fetchAll();
-        return ['status' => 200, 'body' => $posts];
+        
+        try {
+            // First, get the user's language preference
+            $userStmt = $pdo->prepare('SELECT language FROM users WHERE id = ?');
+            $userStmt->execute([$user_id]);
+            $userData = $userStmt->fetch();
+            $userLanguage = $userData ? ($userData['language'] ?? 'english') : 'english';
+            
+            // Build the query with language filtering
+            $stmt = $pdo->prepare('
+                SELECT p.*, s.name AS category_name,
+                       CASE WHEN pl.id IS NOT NULL THEN 1 ELSE 0 END AS is_liked,
+                       CASE WHEN sc.id IS NOT NULL THEN 1 ELSE 0 END AS is_saved,
+                       ? AS user_language
+                FROM posts p
+                JOIN user_categories uc ON uc.subcategory_id = p.category_id
+                JOIN subcategories s ON p.category_id = s.id
+                LEFT JOIN post_likes pl ON pl.post_id = p.id AND pl.user_id = ?
+                LEFT JOIN saved_counts sc ON sc.post_id = p.id AND sc.user_id = ?
+                WHERE uc.user_id = ? 
+                    AND (p.language = ? OR p.language IS NULL OR p.language = \'\')
+                ORDER BY p.created_at DESC
+            ');
+            $stmt->execute([$userLanguage, $user_id, $user_id, $user_id, $userLanguage]);
+            $posts = $stmt->fetchAll();
+            
+            // Log the language filtering for debugging
+            error_log("PostController: Fetching posts for user $user_id with language preference: $userLanguage");
+            error_log("PostController: Found " . count($posts) . " posts matching language filter");
+            
+            return ['status' => 200, 'body' => $posts];
+            
+        } catch (PDOException $e) {
+            error_log("PostController: Database error in getPostsByUserCategories: " . $e->getMessage());
+            return ['status' => 500, 'body' => ['error' => 'Database error occurred']];
+        } catch (Exception $e) {
+            error_log("PostController: General error in getPostsByUserCategories: " . $e->getMessage());
+            return ['status' => 500, 'body' => ['error' => 'An error occurred while fetching posts']];
+        }
     }
 
     public static function getSavedPostsByUser($user_id) {
         $pdo = getDB();
-        $stmt = $pdo->prepare('
-            SELECT p.*, s.name AS category_name, sc.saved_at,
-                   CASE WHEN pl.id IS NOT NULL THEN 1 ELSE 0 END AS is_liked,
-                   1 AS is_saved
-            FROM saved_counts sc
-            JOIN posts p ON sc.post_id = p.id
-            JOIN subcategories s ON p.category_id = s.id
-            LEFT JOIN post_likes pl ON pl.post_id = p.id AND pl.user_id = ?
-            WHERE sc.user_id = ?
-            ORDER BY sc.saved_at DESC
-        ');
-        $stmt->execute([$user_id, $user_id]);
-        $posts = $stmt->fetchAll();
-        return ['status' => 200, 'body' => $posts];
+        
+        try {
+            // First, get the user's language preference
+            $userStmt = $pdo->prepare('SELECT language FROM users WHERE id = ?');
+            $userStmt->execute([$user_id]);
+            $userData = $userStmt->fetch();
+            $userLanguage = $userData ? ($userData['language'] ?? 'english') : 'english';
+            
+            $stmt = $pdo->prepare('
+                SELECT p.*, s.name AS category_name, sc.saved_at,
+                       CASE WHEN pl.id IS NOT NULL THEN 1 ELSE 0 END AS is_liked,
+                       1 AS is_saved,
+                       ? AS user_language
+                FROM saved_counts sc
+                JOIN posts p ON sc.post_id = p.id
+                JOIN subcategories s ON p.category_id = s.id
+                LEFT JOIN post_likes pl ON pl.post_id = p.id AND pl.user_id = ?
+                WHERE sc.user_id = ?
+                    AND (p.language = ? OR p.language IS NULL OR p.language = \'\')
+                ORDER BY sc.saved_at DESC
+            ');
+            $stmt->execute([$userLanguage, $user_id, $user_id, $userLanguage]);
+            $posts = $stmt->fetchAll();
+            
+            // Log the language filtering for debugging
+            error_log("PostController: Fetching saved posts for user $user_id with language preference: $userLanguage");
+            error_log("PostController: Found " . count($posts) . " saved posts matching language filter");
+            
+            return ['status' => 200, 'body' => $posts];
+            
+        } catch (PDOException $e) {
+            error_log("PostController: Database error in getSavedPostsByUser: " . $e->getMessage());
+            return ['status' => 500, 'body' => ['error' => 'Database error occurred']];
+        } catch (Exception $e) {
+            error_log("PostController: General error in getSavedPostsByUser: " . $e->getMessage());
+            return ['status' => 500, 'body' => ['error' => 'An error occurred while fetching saved posts']];
+        }
     }
 
     public static function updateCount($post_id, $field, $user_id = null) {

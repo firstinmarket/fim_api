@@ -20,7 +20,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         exit;
     }
     
-    // Otherwise, fetch posts by user categories
     $user_id = isset($_GET['user_id']) ? $_GET['user_id'] : '';
     if (empty($user_id)) {
         http_response_code(400);
