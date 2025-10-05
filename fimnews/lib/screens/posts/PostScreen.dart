@@ -397,7 +397,7 @@ class _PostScreenState extends State<PostScreen> {
     String imageUrl =
         currentPost['image']?.toString().replaceAll(r'\/', '/') ?? '';
     if (imageUrl.isNotEmpty && !imageUrl.startsWith('http')) {
-      imageUrl = 'http://localhost/fim_api/api/uploads/' + imageUrl;
+      imageUrl = 'https://www.firstinmarket.com/app/api/uploads/' + imageUrl;
       debugPrint(imageUrl);
     }
     final updatedAt = currentPost['created_at']?.toString() ?? '';

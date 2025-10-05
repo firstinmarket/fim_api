@@ -2,7 +2,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 class ApiService {
-  static const String baseUrl = 'http://localhost/fim_api/api/routes/';
+  static const String baseUrl = 'https://www.firstinmarket.com/app/api/routes/';
 
   static Future<Map<String, dynamic>> apiPost(String endpoint, Map<String, dynamic> body) async {
     try {
