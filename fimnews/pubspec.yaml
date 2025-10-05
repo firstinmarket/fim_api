@@ -11,15 +11,22 @@ dependencies:
     sdk: flutter
   http: ^1.2.2
   shared_preferences: ^2.3.0
-  cupertino_icons: ^1.0.8 
+  cupertino_icons: ^1.0.8
   vibration: ^2.0.0
   share_plus: ^12.0.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^4.0.0
+  flutter_launcher_icons: ^0.12.0
 
 flutter:
   uses-material-design: true
   assets:
     - assets/main/main.webp
+
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "assets/main/icon.png"

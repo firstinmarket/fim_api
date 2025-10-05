@@ -18,19 +18,43 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isResettingPassword = false;
 
   Future<void> _handleLogin() async {
-    final email = _emailController.text;
-    final password = _passwordController.text;
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
 
     if (email.isEmpty || password.isEmpty) {
       _showErrorDialog('Please enter both email and password');
       return;
     }
 
+    // Show loading indicator
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+
     try {
+      // Test connection first
+      print('Testing API connection...');
+      bool connectionAvailable = await ApiService.testConnection();
+      if (!connectionAvailable) {
+        Navigator.pop(context); // Close loading dialog
+        _showErrorDialog(
+            'Unable to connect to server. Please check your internet connection and try again.');
+        return;
+      }
+
+      print('Attempting login...');
       final response = await ApiService.apiPost('auth/login.php', {
         'email': email,
         'password': password,
       });
+
+      Navigator.pop(context); // Close loading dialog
+
+      print('Login response: $response');
 
       if (response['success'] == true && response['user_id'] != null) {
         final prefs = await SharedPreferences.getInstance();
@@ -42,7 +66,20 @@ class _LoginScreenState extends State<LoginScreen> {
         _showErrorDialog(errorMsg);
       }
     } catch (err) {
-      _showErrorDialog('Network error');
+      Navigator.pop(context); // Close loading dialog
+      print('Login error: $err');
+      String errorMessage = 'Network error: Unable to connect to server';
+
+      if (err.toString().contains('SocketException')) {
+        errorMessage =
+            'No internet connection. Please check your network and try again.';
+      } else if (err.toString().contains('TimeoutException')) {
+        errorMessage = 'Connection timeout. Please try again.';
+      } else if (err.toString().contains('FormatException')) {
+        errorMessage = 'Server response error. Please try again later.';
+      }
+
+      _showErrorDialog(errorMessage);
     }
   }
 
@@ -112,10 +149,10 @@ class _LoginScreenState extends State<LoginScreen> {
       });
 
       if (response['success'] == true) {
-        Navigator.pop(context); 
+        Navigator.pop(context);
         _showSuccessDialog(
             'Password updated successfully! You can now login with your new password.');
-        
+
         _forgotEmailController.clear();
         _newPasswordController.clear();
       } else {
