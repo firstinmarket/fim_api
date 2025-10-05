@@ -152,7 +152,7 @@ class PostController {
             $stmt->execute([$userLanguage, $user_id, $user_id, $user_id, $userLanguage]);
             $posts = $stmt->fetchAll();
             
-            // Log the language filtering for debugging
+          
             error_log("PostController: Fetching posts for user $user_id with language preference: $userLanguage");
             error_log("PostController: Found " . count($posts) . " posts matching language filter");
             
