@@ -1,12 +1,10 @@
 <?php
-// Enable error reporting for debugging
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
+
 
 include("../../config/cors.php");
 
 try {
-    require_once '../../controllers/profile/updateLanguageController.php';
+    require_once '../../controllers/profile/UpdateLanguageController.php';
 } catch (Exception $e) {
     error_log('Route error: Failed to include controller: ' . $e->getMessage());
     http_response_code(500);
