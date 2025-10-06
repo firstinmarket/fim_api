@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../services/api_service.dart';
 import '../components/navigation.dart';
+import '../../utils/font_manager.dart';
 import 'UnreadScreen.dart';
 
 class PostScreen extends StatefulWidget {
@@ -32,12 +33,14 @@ class _PostScreenState extends State<PostScreen> {
   bool showActions = true;
   int unreadCount = 0;
   final ScrollController _scrollController = ScrollController();
+  double fontScale = 1.0; // Font scale factor
 
   @override
   void initState() {
     super.initState();
     loadReadPostIds();
     loadViewedPostIds();
+    loadFontScale();
     fetchPostsAndCategories(showLoading: true);
 
     _pageController.addListener(() {
@@ -109,6 +112,36 @@ class _PostScreenState extends State<PostScreen> {
       });
     }
     debugPrint('Loaded viewed post IDs: $viewedPostIds');
+  }
+
+  // Load font scale from SharedPreferences
+  Future<void> loadFontScale() async {
+    try {
+      final scale = await FontManager.getFontScale();
+      setState(() {
+        fontScale = scale;
+      });
+    } catch (e) {
+      debugPrint('Error loading font scale: $e');
+    }
+  }
+
+  // Increase font size
+  Future<void> increaseFontSize() async {
+    await FontManager.increaseFontSize();
+    await loadFontScale();
+  }
+
+  // Decrease font size
+  Future<void> decreaseFontSize() async {
+    await FontManager.decreaseFontSize();
+    await loadFontScale();
+  }
+
+  // Reset font size
+  Future<void> resetFontSize() async {
+    await FontManager.resetFontSize();
+    await loadFontScale();
   }
 
   // Mark a post as read and save to SharedPreferences
@@ -608,8 +641,8 @@ class _PostScreenState extends State<PostScreen> {
           const SizedBox(height: 12),
           Text(
             title,
-            style: const TextStyle(
-              fontSize: 17,
+            style: TextStyle(
+              fontSize: FontManager.getTitleFontSize(fontScale),
               fontWeight: FontWeight.w700,
               color: Color(0xFF5F8DFF),
             ),
@@ -617,10 +650,10 @@ class _PostScreenState extends State<PostScreen> {
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 10),
           Container(
             height: isLongContent
-                ? MediaQuery.of(context).size.height * 0.35
+                ? MediaQuery.of(context).size.height * 0.32
                 : null,
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
@@ -638,7 +671,8 @@ class _PostScreenState extends State<PostScreen> {
                       child: Text(
                         fullContent,
                         style: TextStyle(
-                          fontSize: isTamilContent ? 12.0 : 14.2,
+                          fontSize: FontManager.getTamilContentFontSize(
+                              isTamilContent, fontScale),
                           color: Color(0xFFCCCCCC),
                           height: 1.7,
                         ),
@@ -649,7 +683,8 @@ class _PostScreenState extends State<PostScreen> {
                 : Text(
                     fullContent,
                     style: TextStyle(
-                      fontSize: isTamilContent ? 12.0 : 14.2,
+                      fontSize: FontManager.getTamilContentFontSize(
+                          isTamilContent, fontScale),
                       color: Color(0xFFCCCCCC),
                       height: 1.7,
                     ),
@@ -707,13 +742,30 @@ class _PostScreenState extends State<PostScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
+                  Text(
                     'Posts',
                     style: TextStyle(
-                      fontSize: 20,
+                      fontSize: FontManager.getHeaderFontSize(fontScale),
                       fontWeight: FontWeight.w700,
                       color: Colors.white,
                     ),
+                  ),
+                  // Font size controls
+                  Row(
+                    children: [
+                      IconButton(
+                        onPressed: decreaseFontSize,
+                        icon: const Icon(Icons.text_decrease,
+                            color: Colors.white, size: 20),
+                        tooltip: 'Decrease font size',
+                      ),
+                      IconButton(
+                        onPressed: increaseFontSize,
+                        icon: const Icon(Icons.text_increase,
+                            color: Colors.white, size: 20),
+                        tooltip: 'Increase font size',
+                      ),
+                    ],
                   ),
                   Row(
                     children: [
@@ -756,7 +808,9 @@ class _PostScreenState extends State<PostScreen> {
                                   '$unreadCount',
                                   style: TextStyle(
                                     color: Colors.orange,
-                                    fontSize: 12,
+                                    fontSize: FontManager.getActionFontSize(
+                                            fontScale) -
+                                        1,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),

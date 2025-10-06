@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../services/api_service.dart';
 import '../components/navigation.dart';
+import '../../utils/font_manager.dart';
 
 class SavedPostsScreen extends StatefulWidget {
   const SavedPostsScreen({super.key});
@@ -23,10 +24,12 @@ class _SavedPostsScreenState extends State<SavedPostsScreen> {
   String selectedCategory = '';
   final PageController _pageController = PageController();
   bool showActions = true;
+  double fontScale = 1.0; // Font scale factor
 
   @override
   void initState() {
     super.initState();
+    loadFontScale();
     fetchSavedPosts(showLoading: true);
 
     _pageController.addListener(() {
@@ -82,6 +85,36 @@ class _SavedPostsScreenState extends State<SavedPostsScreen> {
     } catch (e) {
       debugPrint('Error toggling like: $e');
     }
+  }
+
+  // Load font scale from SharedPreferences
+  Future<void> loadFontScale() async {
+    try {
+      final scale = await FontManager.getFontScale();
+      setState(() {
+        fontScale = scale;
+      });
+    } catch (e) {
+      debugPrint('Error loading font scale: $e');
+    }
+  }
+
+  // Increase font size
+  Future<void> increaseFontSize() async {
+    await FontManager.increaseFontSize();
+    await loadFontScale();
+  }
+
+  // Decrease font size
+  Future<void> decreaseFontSize() async {
+    await FontManager.decreaseFontSize();
+    await loadFontScale();
+  }
+
+  // Reset font size
+  Future<void> resetFontSize() async {
+    await FontManager.resetFontSize();
+    await loadFontScale();
   }
 
   // Toggle save functionality (unsave from saved posts)
@@ -482,8 +515,8 @@ class _SavedPostsScreenState extends State<SavedPostsScreen> {
           const SizedBox(height: 12),
           Text(
             title,
-            style: const TextStyle(
-              fontSize: 17,
+            style: TextStyle(
+              fontSize: FontManager.getTitleFontSize(fontScale),
               fontWeight: FontWeight.w700,
               color: Color(0xFF5F8DFF),
             ),
@@ -512,7 +545,8 @@ class _SavedPostsScreenState extends State<SavedPostsScreen> {
                       child: Text(
                         fullContent,
                         style: TextStyle(
-                          fontSize: isTamilContent ? 12.0 : 14.2,
+                          fontSize: FontManager.getTamilContentFontSize(
+                              isTamilContent, fontScale),
                           color: Color(0xFFCCCCCC),
                           height: 1.7,
                         ),
@@ -523,7 +557,8 @@ class _SavedPostsScreenState extends State<SavedPostsScreen> {
                 : Text(
                     fullContent,
                     style: TextStyle(
-                      fontSize: isTamilContent ? 12.0 : 14.2,
+                      fontSize: FontManager.getTamilContentFontSize(
+                          isTamilContent, fontScale),
                       color: Color(0xFFCCCCCC),
                       height: 1.7,
                     ),
@@ -587,10 +622,11 @@ class _SavedPostsScreenState extends State<SavedPostsScreen> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
+                          Text(
                             'Saved Posts',
                             style: TextStyle(
-                              fontSize: 20,
+                              fontSize:
+                                  FontManager.getHeaderFontSize(fontScale),
                               fontWeight: FontWeight.w700,
                               color: Colors.white,
                             ),
@@ -604,6 +640,22 @@ class _SavedPostsScreenState extends State<SavedPostsScreen> {
                             ),
                           ),
                         ],
+                      ),
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      IconButton(
+                        onPressed: decreaseFontSize,
+                        icon: const Icon(Icons.text_decrease,
+                            color: Colors.white, size: 20),
+                        tooltip: 'Decrease font size',
+                      ),
+                      IconButton(
+                        onPressed: increaseFontSize,
+                        icon: const Icon(Icons.text_increase,
+                            color: Colors.white, size: 20),
+                        tooltip: 'Increase font size',
                       ),
                     ],
                   ),
