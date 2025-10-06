@@ -1,12 +1,12 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// FontManager - Controls dynamic font sizing for content only
-/// 
+///
 /// BEHAVIOR:
 /// - ✅ Content text (Tamil/English) scales with user preference
 /// - ❌ Titles, headers, buttons remain FIXED size
 /// - ❌ Container heights remain FIXED (based on screen percentage)
-/// 
+///
 /// This ensures only readability content scales while UI remains consistent
 class FontManager {
   static const String _fontScaleKey = 'font_scale_factor';

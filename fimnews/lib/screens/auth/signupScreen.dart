@@ -173,7 +173,9 @@ class _SignupScreenState extends State<SignupScreen> {
           // Overlay
           Container(
             color: Colors.black.withOpacity(0.5),
-            padding: const EdgeInsets.symmetric(horizontal: 24),
+            padding: EdgeInsets.symmetric(
+              horizontal: MediaQuery.of(context).size.width < 350 ? 16 : 24,
+            ),
             child: Center(
               child: SingleChildScrollView(
                 child: Column(
@@ -340,9 +342,13 @@ class _SignupScreenState extends State<SignupScreen> {
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF222222),
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 12,
-                            horizontal: 32,
+                          padding: EdgeInsets.symmetric(
+                            vertical: MediaQuery.of(context).size.width < 350
+                                ? 10
+                                : 12,
+                            horizontal: MediaQuery.of(context).size.width < 350
+                                ? 24
+                                : 32,
                           ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(25),
@@ -372,58 +378,96 @@ class _SignupScreenState extends State<SignupScreen> {
                         ),
                       ),
                       const SizedBox(height: 16),
-                      // OTP input fields
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: List.generate(6, (index) {
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 8),
-                            child: SizedBox(
-                              width: 40,
-                              height: 50,
-                              child: TextFormField(
-                                controller: _otpControllers[index],
-                                focusNode: _otpFocusNodes[index],
-                                keyboardType: TextInputType.number,
-                                textAlign: TextAlign.center,
-                                maxLength: 1,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 24,
+                      // OTP input fields - Responsive
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: List.generate(6, (index) {
+                            return Flexible(
+                              child: Container(
+                                margin:
+                                    const EdgeInsets.symmetric(horizontal: 4),
+                                constraints: const BoxConstraints(
+                                  minWidth: 35,
+                                  maxWidth: 60,
+                                  minHeight: 45,
+                                  maxHeight: 60,
                                 ),
-                                decoration: InputDecoration(
-                                  counterText: '',
-                                  filled: true,
-                                  fillColor: Colors.white.withOpacity(0.2),
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                    borderSide: const BorderSide(
+                                child: AspectRatio(
+                                  aspectRatio: 1.0,
+                                  child: TextFormField(
+                                    controller: _otpControllers[index],
+                                    focusNode: _otpFocusNodes[index],
+                                    keyboardType: TextInputType.number,
+                                    textAlign: TextAlign.center,
+                                    maxLength: 1,
+                                    style: TextStyle(
                                       color: Colors.white,
-                                      width: 2,
+                                      fontSize:
+                                          MediaQuery.of(context).size.width <
+                                                  350
+                                              ? 18
+                                              : 22,
+                                      fontWeight: FontWeight.bold,
                                     ),
+                                    decoration: InputDecoration(
+                                      counterText: '',
+                                      filled: true,
+                                      fillColor: Colors.white.withOpacity(0.15),
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                        borderSide: const BorderSide(
+                                          color: Colors.white70,
+                                          width: 1.5,
+                                        ),
+                                      ),
+                                      focusedBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                        borderSide: const BorderSide(
+                                          color: Color(0xFF5F8DFF),
+                                          width: 2.5,
+                                        ),
+                                      ),
+                                      enabledBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                        borderSide: const BorderSide(
+                                          color: Colors.white54,
+                                          width: 1.5,
+                                        ),
+                                      ),
+                                      contentPadding: EdgeInsets.zero,
+                                    ),
+                                    onChanged: (value) =>
+                                        _handleOtpChange(value, index),
+                                    onFieldSubmitted: (value) {
+                                      if (index == 5 && value.isNotEmpty) {
+                                        _otpFocusNodes[index].unfocus();
+                                      }
+                                    },
                                   ),
                                 ),
-                                onChanged: (value) =>
-                                    _handleOtpChange(value, index),
-                                onFieldSubmitted: (value) {
-                                  if (index == 5 && value.isNotEmpty) {
-                                    _otpFocusNodes[index].unfocus();
-                                  }
-                                },
                               ),
-                            ),
-                          );
-                        }),
+                            );
+                          }),
+                        ),
                       ),
-                      const SizedBox(height: 24),
+                      SizedBox(
+                        height:
+                            MediaQuery.of(context).size.width < 350 ? 20 : 24,
+                      ),
                       // Verify OTP button
                       ElevatedButton(
                         onPressed: _handleVerifyOtp,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.black.withOpacity(0.2),
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 12,
-                            horizontal: 32,
+                          padding: EdgeInsets.symmetric(
+                            vertical: MediaQuery.of(context).size.width < 350
+                                ? 10
+                                : 12,
+                            horizontal: MediaQuery.of(context).size.width < 350
+                                ? 24
+                                : 32,
                           ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(25),
