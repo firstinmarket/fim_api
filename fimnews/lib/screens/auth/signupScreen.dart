@@ -50,9 +50,11 @@ class _SignupScreenState extends State<SignupScreen> {
         setState(() {
           _showOtp = true;
         });
-        _showSuccessDialog('OTP Sent', 'Please enter the OTP sent to your email');
+        _showSuccessDialog(
+            'OTP Sent', 'Please enter the OTP sent to your email');
       } else {
-        _showErrorDialog(response['error'] ?? response['message'] ?? 'Could not send OTP');
+        _showErrorDialog(
+            response['error'] ?? response['message'] ?? 'Could not send OTP');
       }
     } catch (err) {
       _showErrorDialog('Network error');
@@ -74,7 +76,8 @@ class _SignupScreenState extends State<SignupScreen> {
       });
 
       if (response['success'] == true) {
-        _showSuccessDialog('OTP Resent', 'A new OTP has been sent to your email');
+        _showSuccessDialog(
+            'OTP Resent', 'A new OTP has been sent to your email');
       } else {
         _showErrorDialog(response['message'] ?? 'Could not resend OTP');
       }
@@ -98,7 +101,7 @@ class _SignupScreenState extends State<SignupScreen> {
 
       if (response['success']) {
         _showSuccessDialog('Signup Successful', '', onOk: () {
-          Navigator.pushNamed(context, '/login');
+          Navigator.pushReplacementNamed(context, '/login');
         });
       } else {
         _showErrorDialog(response['message'] ?? 'Invalid OTP');
@@ -190,7 +193,8 @@ class _SignupScreenState extends State<SignupScreen> {
                       // Name input
                       TextFormField(
                         controller: _nameController,
-                        style: const TextStyle(color: Colors.white, fontSize: 16),
+                        style:
+                            const TextStyle(color: Colors.white, fontSize: 16),
                         decoration: InputDecoration(
                           hintText: 'Name',
                           hintStyle: const TextStyle(color: Colors.white70),
@@ -208,7 +212,8 @@ class _SignupScreenState extends State<SignupScreen> {
                       TextFormField(
                         controller: _mobileController,
                         keyboardType: TextInputType.phone,
-                        style: const TextStyle(color: Colors.white, fontSize: 16),
+                        style:
+                            const TextStyle(color: Colors.white, fontSize: 16),
                         decoration: InputDecoration(
                           hintText: 'Mobile Number',
                           hintStyle: const TextStyle(color: Colors.white70),
@@ -226,7 +231,8 @@ class _SignupScreenState extends State<SignupScreen> {
                       TextFormField(
                         controller: _emailController,
                         keyboardType: TextInputType.emailAddress,
-                        style: const TextStyle(color: Colors.white, fontSize: 16),
+                        style:
+                            const TextStyle(color: Colors.white, fontSize: 16),
                         decoration: InputDecoration(
                           hintText: 'Email',
                           hintStyle: const TextStyle(color: Colors.white70),
@@ -242,7 +248,8 @@ class _SignupScreenState extends State<SignupScreen> {
                           setState(() {
                             if (value.isNotEmpty &&
                                 !RegExp(r'^\S+@\S+\.\S+$').hasMatch(value)) {
-                              _emailError = 'Please enter a valid email address';
+                              _emailError =
+                                  'Please enter a valid email address';
                             } else {
                               _emailError = '';
                             }
@@ -266,7 +273,8 @@ class _SignupScreenState extends State<SignupScreen> {
                       TextFormField(
                         controller: _passwordController,
                         obscureText: true,
-                        style: const TextStyle(color: Colors.white, fontSize: 16),
+                        style:
+                            const TextStyle(color: Colors.white, fontSize: 16),
                         decoration: InputDecoration(
                           hintText: 'Password',
                           hintStyle: const TextStyle(color: Colors.white70),
@@ -291,7 +299,8 @@ class _SignupScreenState extends State<SignupScreen> {
                           ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(25),
-                            side: const BorderSide(color: Colors.white, width: 2),
+                            side:
+                                const BorderSide(color: Colors.white, width: 2),
                           ),
                           elevation: 4,
                           shadowColor: Colors.black.withOpacity(0.3),
@@ -337,7 +346,8 @@ class _SignupScreenState extends State<SignupScreen> {
                           ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(25),
-                            side: const BorderSide(color: Colors.white, width: 2),
+                            side:
+                                const BorderSide(color: Colors.white, width: 2),
                           ),
                           elevation: 4,
                           shadowColor: Colors.black.withOpacity(0.3),
@@ -393,7 +403,8 @@ class _SignupScreenState extends State<SignupScreen> {
                                     ),
                                   ),
                                 ),
-                                onChanged: (value) => _handleOtpChange(value, index),
+                                onChanged: (value) =>
+                                    _handleOtpChange(value, index),
                                 onFieldSubmitted: (value) {
                                   if (index == 5 && value.isNotEmpty) {
                                     _otpFocusNodes[index].unfocus();
@@ -416,7 +427,8 @@ class _SignupScreenState extends State<SignupScreen> {
                           ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(25),
-                            side: const BorderSide(color: Colors.white, width: 2),
+                            side:
+                                const BorderSide(color: Colors.white, width: 2),
                           ),
                           elevation: 4,
                           shadowColor: Colors.black.withOpacity(0.3),
@@ -443,7 +455,8 @@ class _SignupScreenState extends State<SignupScreen> {
                           ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(25),
-                            side: const BorderSide(color: Colors.white, width: 2),
+                            side:
+                                const BorderSide(color: Colors.white, width: 2),
                           ),
                           elevation: 4,
                           shadowColor: Colors.black.withOpacity(0.3),

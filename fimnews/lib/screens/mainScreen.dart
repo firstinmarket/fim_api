@@ -28,8 +28,9 @@ class _MainScreenState extends State<MainScreen> {
         // Add a small delay to show splash screen briefly
         await Future.delayed(const Duration(seconds: 1));
 
+        // Navigate directly to posts section when app reopens
         if (mounted) {
-          Navigator.pushReplacementNamed(context, '/profile');
+          Navigator.pushReplacementNamed(context, '/posts');
         }
       } else {
         debugPrint('No valid session found, showing main screen');
