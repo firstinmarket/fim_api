@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CosmicContentCommander | Dashboard</title>
+    <title>FIM News | Admin Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://unpkg.com/feather-icons"></script>
@@ -13,9 +13,11 @@
             theme: {
                 extend: {
                     colors: {
-                        primary: '#0ea5e9',
-                        secondary: '#3b82f6',
-                        'primary-dark': '#0284c7'
+                        primary: '#FF6B35',
+                        secondary: '#F7931E',
+                        'primary-dark': '#E55A2B',
+                        'fim-blue': '#1E40AF',
+                        'fim-green': '#10B981'
                     }
                 }
             }
@@ -55,10 +57,10 @@
         <aside class="w-64 bg-gray-800 border-r border-gray-700 flex-shrink-0 transition-all duration-300 ease-in-out" :class="{'hidden': !sidebarOpen && !isMobile, 'block': sidebarOpen || !isMobile}" v-show="!isMobile || sidebarOpen">
             <div class="p-4 flex items-center space-x-3">
                 <div class="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
-                    <i data-feather="rocket" class="w-5 h-5 text-white"></i>
+                    <i data-feather="zap" class="w-5 h-5 text-white"></i>
                 </div>
                 <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">
-                    CosmicContentCommander
+                    FIM News Dashboard
                 </h1>
             </div>
             <nav class="mt-8 px-2 space-y-1">
@@ -115,7 +117,7 @@
                     <i data-feather="menu" class="w-6 h-6"></i>
                 </button>
                 <h1 class="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">
-                    CosmicContentCommander
+                    FIM News Dashboard
                 </h1>
                 <div class="w-6"></div> <!-- Spacer -->
             </header>
@@ -171,10 +173,10 @@
                     <div class="p-4 flex items-center justify-between border-b border-gray-700">
                         <div class="flex items-center space-x-3">
                             <div class="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
-                                <i data-feather="rocket" class="w-4 h-4 text-white"></i>
+                                <i data-feather="zap" class="w-4 h-4 text-white"></i>
                             </div>
                             <h1 class="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">
-                                CosmicContentCommander
+                                FIM News Dashboard
                             </h1>
                         </div>
                         <button @click="toggleSidebar" class="text-gray-400 hover:text-white transition-colors">
@@ -357,10 +359,10 @@
                 <!-- Posts Management Section -->
                 <div v-if="currentPage === 'posts'">
                     <div class="flex justify-between items-center mb-6">
-                        <h2 class="text-2xl font-bold text-white">Posts Management</h2>
+                        <h2 class="text-2xl font-bold text-white">News Articles Management</h2>
                         <button @click="showPostModal = true; editingPost = null" class="bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-lg flex items-center">
                             <i data-feather="plus" class="w-4 h-4 mr-2"></i>
-                            Add New Post
+                            Add News Article
                         </button>
                     </div>
                     
@@ -368,13 +370,14 @@
                     <div class="bg-gray-800 rounded-xl p-4 mb-6">
                         <div class="flex flex-col md:flex-row gap-4">
                             <div class="flex-1">
-                                <input v-model="postSearch" type="text" placeholder="Search posts..." class="w-full bg-gray-700 text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
+                                <input v-model="postSearch" type="text" placeholder="Search news articles..." class="w-full bg-gray-700 text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
                             </div>
                             <select v-model="postFilter" class="bg-gray-700 text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
-                                <option value="all">All Posts</option>
+                                <option value="all">All Articles</option>
                                 <option value="published">Published</option>
                                 <option value="draft">Draft</option>
                                 <option value="scheduled">Scheduled</option>
+                                <option value="breaking">Breaking News</option>
                             </select>
                         </div>
                     </div>
@@ -469,7 +472,8 @@
                                 <option value="all">All Roles</option>
                                 <option value="admin">Admin</option>
                                 <option value="editor">Editor</option>
-                                <option value="viewer">Viewer</option>
+                                <option value="contributor">Contributor</option>
+                                <option value="viewer">Subscriber</option>
                             </select>
                         </div>
                     </div>
@@ -727,10 +731,10 @@
                     
                     // Stats data
                     const stats = ref({
-                        totalPosts: 1248,
-                        totalViews: 42879,
-                        totalLikes: 9742,
-                        totalUsers: 1842
+                        totalPosts: 2847,
+                        totalViews: 156789,
+                        totalLikes: 23456,
+                        totalUsers: 5672
                     });
                     
                     // Handle window resize
@@ -801,7 +805,8 @@
                         const classes = {
                             'admin': 'px-2 py-1 text-xs font-medium bg-red-500 bg-opacity-10 text-red-400 rounded-full',
                             'editor': 'px-2 py-1 text-xs font-medium bg-blue-500 bg-opacity-10 text-blue-400 rounded-full',
-                            'viewer': 'px-2 py-1 text-xs font-medium bg-green-500 bg-opacity-10 text-green-400 rounded-full'
+                            'contributor': 'px-2 py-1 text-xs font-medium bg-green-500 bg-opacity-10 text-green-400 rounded-full',
+                            'viewer': 'px-2 py-1 text-xs font-medium bg-purple-500 bg-opacity-10 text-purple-400 rounded-full'
                         };
                         return classes[role] || 'px-2 py-1 text-xs font-medium bg-gray-500 bg-opacity-10 text-gray-400 rounded-full';
                     };
@@ -850,59 +855,65 @@
                     };
                     
                     const pageTitles = {
-                        dashboard: 'Dashboard Overview',
-                        posts: 'Posts Management',
-                        users: 'Users Management',
-                        categories: 'Categories Management',
-                        analytics: 'Analytics & Metrics',
-                        settings: 'Settings'
+                        dashboard: 'FIM News Dashboard',
+                        posts: 'News Articles Management',
+                        users: 'Users & Subscribers Management',
+                        categories: 'News Categories Management',
+                        analytics: 'News Analytics & Insights',
+                        settings: 'FIM News Settings'
                     };
                     
                     // Sample data
                     const posts = ref([
-                        { id: 1, title: 'Getting Started with Vue 3', author: 'Jane Doe', date: 'May 15, 2023', status: 'Published', views: 1245, likes: 89, category: 'Technology', image: 'https://via.placeholder.com/150x150?text=Vue' },
-                        { id: 2, title: 'Advanced Tailwind Techniques', author: 'John Smith', date: 'May 14, 2023', status: 'Published', views: 842, likes: 67, category: 'Design', image: 'https://via.placeholder.com/150x150?text=CSS' },
-                        { id: 3, title: 'Building Modern Dashboards', author: 'Alex Johnson', date: 'May 13, 2023', status: 'Draft', views: 0, likes: 0, category: 'Development', image: 'https://via.placeholder.com/150x150?text=Dashboard' },
-                        { id: 4, title: 'Authentication Best Practices', author: 'Sarah Williams', date: 'May 12, 2023', status: 'Published', views: 1089, likes: 124, category: 'Security', image: 'https://via.placeholder.com/150x150?text=Auth' },
-                        { id: 5, title: 'Performance Optimization', author: 'Mike Brown', date: 'May 10, 2023', status: 'Published', views: 756, likes: 45, category: 'Performance', image: 'https://via.placeholder.com/150x150?text=Speed' },
-                        { id: 6, title: 'Mobile Development Tips', author: 'Emma Davis', date: 'May 09, 2023', status: 'Scheduled', views: 0, likes: 0, category: 'Mobile', image: 'https://via.placeholder.com/150x150?text=Mobile' }
+                        { id: 1, title: 'Breaking: Technology Market Shows Strong Growth in 2024', author: 'Rajesh Kumar', date: 'Oct 10, 2025', status: 'Published', views: 4567, likes: 234, category: 'Technology', image: 'https://via.placeholder.com/150x150?text=Tech+News' },
+                        { id: 2, title: 'Local Business Innovation Awards Winners Announced', author: 'Priya Sharma', date: 'Oct 09, 2025', status: 'Published', views: 3245, likes: 189, category: 'Business', image: 'https://via.placeholder.com/150x150?text=Business' },
+                        { id: 3, title: 'Sports Update: Cricket Tournament Finals This Weekend', author: 'Amit Singh', date: 'Oct 08, 2025', status: 'Published', views: 5432, likes: 367, category: 'Sports', image: 'https://via.placeholder.com/150x150?text=Sports' },
+                        { id: 4, title: 'Health Ministry Issues New Guidelines for Winter Season', author: 'Dr. Sunita Patel', date: 'Oct 07, 2025', status: 'Draft', views: 0, likes: 0, category: 'Health', image: 'https://via.placeholder.com/150x150?text=Health' },
+                        { id: 5, title: 'Education Sector Embraces Digital Learning Methods', author: 'Vikram Mehta', date: 'Oct 06, 2025', status: 'Published', views: 2876, likes: 145, category: 'Education', image: 'https://via.placeholder.com/150x150?text=Education' },
+                        { id: 6, title: 'Entertainment Industry Gears Up for Festival Season', author: 'Kavya Reddy', date: 'Oct 05, 2025', status: 'Scheduled', views: 0, likes: 0, category: 'Entertainment', image: 'https://via.placeholder.com/150x150?text=Entertainment' }
                     ]);
                     
                     const users = ref([
-                        { id: 1, name: 'Jane Doe', email: 'jane@example.com', role: 'admin', status: 'active', joinedDate: 'Jan 15, 2023', postsCount: 12 },
-                        { id: 2, name: 'John Smith', email: 'john@example.com', role: 'editor', status: 'active', joinedDate: 'Feb 20, 2023', postsCount: 8 },
-                        { id: 3, name: 'Alex Johnson', email: 'alex@example.com', role: 'viewer', status: 'inactive', joinedDate: 'Mar 10, 2023', postsCount: 3 },
-                        { id: 4, name: 'Sarah Williams', email: 'sarah@example.com', role: 'editor', status: 'active', joinedDate: 'Apr 05, 2023', postsCount: 15 },
-                        { id: 5, name: 'Mike Brown', email: 'mike@example.com', role: 'viewer', status: 'active', joinedDate: 'May 01, 2023', postsCount: 5 }
+                        { id: 1, name: 'Rajesh Kumar', email: 'rajesh@fimnews.com', role: 'admin', status: 'active', joinedDate: 'Jan 15, 2024', postsCount: 47 },
+                        { id: 2, name: 'Priya Sharma', email: 'priya@fimnews.com', role: 'editor', status: 'active', joinedDate: 'Mar 20, 2024', postsCount: 32 },
+                        { id: 3, name: 'Amit Singh', email: 'amit@fimnews.com', role: 'editor', status: 'active', joinedDate: 'May 10, 2024', postsCount: 28 },
+                        { id: 4, name: 'Dr. Sunita Patel', email: 'sunita@fimnews.com', role: 'contributor', status: 'active', joinedDate: 'Jul 05, 2024', postsCount: 15 },
+                        { id: 5, name: 'Vikram Mehta', email: 'vikram@fimnews.com', role: 'contributor', status: 'active', joinedDate: 'Aug 12, 2024', postsCount: 22 },
+                        { id: 6, name: 'Kavya Reddy', email: 'kavya@fimnews.com', role: 'editor', status: 'active', joinedDate: 'Sep 01, 2024', postsCount: 18 }
                     ]);
                     
                     const categories = ref([
-                        { id: 1, name: 'Technology', description: 'Latest tech trends and innovations', postsCount: 45, subcategories: [{ id: 1, name: 'AI/ML' }, { id: 2, name: 'Web Dev' }] },
-                        { id: 2, name: 'Design', description: 'UI/UX and graphic design resources', postsCount: 32, subcategories: [{ id: 3, name: 'UI/UX' }, { id: 4, name: 'Graphics' }] },
-                        { id: 3, name: 'Business', description: 'Business strategies and insights', postsCount: 28, subcategories: [{ id: 5, name: 'Marketing' }, { id: 6, name: 'Finance' }] },
-                        { id: 4, name: 'Lifestyle', description: 'Health, travel, and personal development', postsCount: 19, subcategories: [{ id: 7, name: 'Health' }, { id: 8, name: 'Travel' }] }
+                        { id: 1, name: 'Technology', description: 'Latest technology news and innovations in India', postsCount: 287, subcategories: [{ id: 1, name: 'Startups' }, { id: 2, name: 'AI & ML' }, { id: 3, name: 'Mobile Tech' }] },
+                        { id: 2, name: 'Business', description: 'Indian business news, market updates, and economy', postsCount: 234, subcategories: [{ id: 4, name: 'Markets' }, { id: 5, name: 'Economy' }, { id: 6, name: 'Finance' }] },
+                        { id: 3, name: 'Sports', description: 'Cricket, football, and other sports news', postsCount: 198, subcategories: [{ id: 7, name: 'Cricket' }, { id: 8, name: 'Football' }, { id: 9, name: 'Olympics' }] },
+                        { id: 4, name: 'Politics', description: 'Political news and government updates', postsCount: 167, subcategories: [{ id: 10, name: 'Elections' }, { id: 11, name: 'Policy' }] },
+                        { id: 5, name: 'Health', description: 'Health news, medical breakthroughs, and wellness', postsCount: 145, subcategories: [{ id: 12, name: 'Medical' }, { id: 13, name: 'Wellness' }] },
+                        { id: 6, name: 'Education', description: 'Educational news, exams, and academic updates', postsCount: 123, subcategories: [{ id: 14, name: 'Exams' }, { id: 15, name: 'Universities' }] },
+                        { id: 7, name: 'Entertainment', description: 'Bollywood, regional cinema, and celebrity news', postsCount: 189, subcategories: [{ id: 16, name: 'Bollywood' }, { id: 17, name: 'Regional' }, { id: 18, name: 'Music' }] },
+                        { id: 8, name: 'Lifestyle', description: 'Fashion, food, travel, and lifestyle trends', postsCount: 156, subcategories: [{ id: 19, name: 'Fashion' }, { id: 20, name: 'Food' }, { id: 21, name: 'Travel' }] }
                     ]);
                     
                     const analytics = ref({
-                        mostViewed: { title: 'Getting Started with Vue 3', views: 1245 },
-                        mostLiked: { title: 'Authentication Best Practices', likes: 124 },
-                        topAuthor: { name: 'Sarah Williams', posts: 15 }
+                        mostViewed: { title: 'Breaking: Technology Market Shows Strong Growth in 2024', views: 4567 },
+                        mostLiked: { title: 'Sports Update: Cricket Tournament Finals This Weekend', likes: 367 },
+                        topAuthor: { name: 'Rajesh Kumar', posts: 47 }
                     });
                     
                     const settings = ref({
-                        siteName: 'CosmicContentCommander',
-                        siteDescription: 'Advanced content management platform',
-                        contactEmail: 'admin@cosmic.com'
+                        siteName: 'FIM News',
+                        siteDescription: 'First In Market - Your trusted source for breaking news, business updates, technology trends, and comprehensive coverage across India',
+                        contactEmail: 'admin@fimnews.com'
                     });
                     
                     const recentPosts = ref(posts.value.slice(0, 5));
                     
                     const recentActivities = ref([
-                        { id: 1, action: 'Jane Doe published a new post "Getting Started with Vue 3"', time: '2 hours ago', icon: 'edit-2', color: 'blue' },
-                        { id: 2, action: 'John Smith updated his profile information', time: '4 hours ago', icon: 'user', color: 'blue' },
-                        { id: 3, action: 'New user "Alex Johnson" registered', time: '6 hours ago', icon: 'user-plus', color: 'green' },
-                        { id: 4, action: 'Sarah Williams created a new category "Web Development"', time: '1 day ago', icon: 'folder-plus', color: 'purple' },
-                        { id: 5, action: 'System backup completed successfully', time: '1 day ago', icon: 'hard-drive', color: 'yellow' }
+                        { id: 1, action: 'Rajesh Kumar published "Breaking: Technology Market Shows Strong Growth"', time: '1 hour ago', icon: 'edit-2', color: 'blue' },
+                        { id: 2, action: 'New subscriber from Mumbai registered', time: '2 hours ago', icon: 'user-plus', color: 'green' },
+                        { id: 3, action: 'Priya Sharma updated Business news category', time: '3 hours ago', icon: 'folder', color: 'purple' },
+                        { id: 4, action: 'Cricket news article got 500+ views in 30 minutes', time: '4 hours ago', icon: 'trending-up', color: 'yellow' },
+                        { id: 5, action: 'Amit Singh scheduled sports tournament coverage', time: '5 hours ago', icon: 'calendar', color: 'blue' },
+                        { id: 6, action: 'Daily newsletter sent to 15,000+ subscribers', time: '6 hours ago', icon: 'mail', color: 'green' }
                     ]);
                     
                     onMounted(() => {
