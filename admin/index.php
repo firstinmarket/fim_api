@@ -54,198 +54,35 @@
 <body class="bg-gray-900 text-gray-100 min-h-screen">
     <div id="app" v-cloak class="flex min-h-screen">
         <!-- Sidebar -->
-        <aside class="w-64 bg-gray-800 border-r border-gray-700 flex-shrink-0 transition-all duration-300 ease-in-out" :class="{'hidden': !sidebarOpen && !isMobile, 'block': sidebarOpen || !isMobile}" v-show="!isMobile || sidebarOpen">
-            <div class="p-4 flex items-center space-x-3">
-                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
-                    <i data-feather="zap" class="w-5 h-5 text-white"></i>
-                </div>
-                <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">
-                    FIM News Dashboard
-                </h1>
-            </div>
-            <nav class="mt-8 px-2 space-y-1">
-                <a 
-                    href="#" 
-                    @click.prevent="currentPage = 'dashboard'"
-                    :class="['sidebar-link flex items-center px-4 py-3 rounded-lg group', currentPage === 'dashboard' ? 'bg-gray-700 text-white' : 'text-gray-300 hover:bg-gray-700']">
-                    <i data-feather="home" class="sidebar-icon w-5 h-5 mr-3 text-primary"></i>
-                    Dashboard
-                </a>
-                <a 
-                    href="#" 
-                    @click.prevent="currentPage = 'posts'"
-                    :class="['sidebar-link flex items-center px-4 py-3 rounded-lg group', currentPage === 'posts' ? 'bg-gray-700 text-white' : 'text-gray-300 hover:bg-gray-700']">
-                    <i data-feather="file-text" class="sidebar-icon w-5 h-5 mr-3 text-blue-400"></i>
-                    Posts
-                </a>
-                <a 
-                    href="#" 
-                    @click.prevent="currentPage = 'users'"
-                    :class="['sidebar-link flex items-center px-4 py-3 rounded-lg group', currentPage === 'users' ? 'bg-gray-700 text-white' : 'text-gray-300 hover:bg-gray-700']">
-                    <i data-feather="users" class="sidebar-icon w-5 h-5 mr-3 text-green-400"></i>
-                    Users
-                </a>
-                <a 
-                    href="#" 
-                    @click.prevent="currentPage = 'categories'"
-                    :class="['sidebar-link flex items-center px-4 py-3 rounded-lg group', currentPage === 'categories' ? 'bg-gray-700 text-white' : 'text-gray-300 hover:bg-gray-700']">
-                    <i data-feather="folder" class="sidebar-icon w-5 h-5 mr-3 text-purple-400"></i>
-                    Categories
-                </a>
-                <a 
-                    href="#" 
-                    @click.prevent="currentPage = 'analytics'"
-                    :class="['sidebar-link flex items-center px-4 py-3 rounded-lg group', currentPage === 'analytics' ? 'bg-gray-700 text-white' : 'text-gray-300 hover:bg-gray-700']">
-                    <i data-feather="bar-chart-2" class="sidebar-icon w-5 h-5 mr-3 text-yellow-400"></i>
-                    Analytics
-                </a>
-                <a 
-                    href="#" 
-                    @click.prevent="currentPage = 'settings'"
-                    :class="['sidebar-link flex items-center px-4 py-3 rounded-lg group', currentPage === 'settings' ? 'bg-gray-700 text-white' : 'text-gray-300 hover:bg-gray-700']">
-                    <i data-feather="settings" class="sidebar-icon w-5 h-5 mr-3 text-gray-400"></i>
-                    Settings
-                </a>
-            </nav>
-        </aside>
-
-        <!-- Main Content -->
-        <div class="flex-1 flex flex-col overflow-hidden">
-            <!-- Mobile Header -->
-            <header class="md:hidden bg-gray-800 border-b border-gray-700 p-4 flex items-center justify-between">
-                <button @click="toggleSidebar" class="text-gray-400 hover:text-white transition-colors">
-                    <i data-feather="menu" class="w-6 h-6"></i>
-                </button>
-                <h1 class="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">
-                    FIM News Dashboard
-                </h1>
-                <div class="w-6"></div> <!-- Spacer -->
-            </header>
-
-            <!-- Desktop Header -->
-            <header class="hidden md:flex items-center justify-between bg-gray-800 border-b border-gray-700 p-4">
-                <div class="flex items-center space-x-4">
-                    <button @click="toggleSidebar" class="text-gray-400 hover:text-white transition-colors mr-4">
-                        <i data-feather="menu" class="w-5 h-5"></i>
-                    </button>
-                    <h2 class="text-xl font-semibold" :class="{
-                        'text-primary': currentPage === 'dashboard',
-                        'text-blue-400': currentPage === 'posts',
-                        'text-green-400': currentPage === 'users',
-                        'text-purple-400': currentPage === 'categories',
-                        'text-yellow-400': currentPage === 'analytics',
-                        'text-gray-400': currentPage === 'settings'
-                    }">
-                        {{ pageTitles[currentPage] || 'Dashboard Overview' }}
-                    </h2>
-                </div>
-                <div class="flex items-center space-x-4">
-                    <div class="relative">
-                        <i data-feather="search" class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4"></i>
-                        <input 
-                            type="text" 
-                            placeholder="Search..." 
-                            v-model="searchQuery"
-                            class="bg-gray-700 text-white pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200 w-64"
-                            @focus="searchFocused = true"
-                            @blur="searchFocused = false"
-                        >
-                    </div>
-                    <button class="relative p-1 rounded-full text-gray-400 hover:text-white hover:bg-gray-700">
-                        <i data-feather="bell" class="w-5 h-5"></i>
-                        <span class="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
-                    </button>
-                    <div class="flex items-center space-x-2 cursor-pointer">
-                        <div class="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
-                            <i data-feather="user" class="w-4 h-4 text-white"></i>
-                        </div>
-                        <span class="text-sm font-medium">Admin</span>
-                    </div>
-                </div>
-            </header>
-
-            <!-- Mobile Sidebar Overlay -->
-            <transition name="fade">
-                <div v-if="sidebarOpen && isMobile" @click="toggleSidebar" class="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"></div>
-            </transition>
-            <transition name="slide-left">
-                <aside v-if="sidebarOpen && isMobile" class="fixed inset-y-0 left-0 w-64 bg-gray-800 z-50 shadow-xl transform md:hidden">
-                    <div class="p-4 flex items-center justify-between border-b border-gray-700">
-                        <div class="flex items-center space-x-3">
-                            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
-                                <i data-feather="zap" class="w-4 h-4 text-white"></i>
-                            </div>
-                            <h1 class="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">
-                                FIM News Dashboard
-                            </h1>
-                        </div>
-                        <button @click="toggleSidebar" class="text-gray-400 hover:text-white transition-colors">
-                            <i data-feather="x" class="w-5 h-5"></i>
-                        </button>
-                    </div>
-                    <nav class="mt-4 px-2 space-y-1">
-                        <a 
-                            href="#" 
-                            @click.prevent="setCurrentPage('dashboard')"
-                            :class="['sidebar-link flex items-center px-4 py-3 rounded-lg group', currentPage === 'dashboard' ? 'bg-gray-700 text-white' : 'text-gray-300 hover:bg-gray-700']">
-                            <i data-feather="home" class="sidebar-icon w-5 h-5 mr-3 text-primary"></i>
-                            Dashboard
-                        </a>
-                        <a 
-                            href="#" 
-                            @click.prevent="setCurrentPage('posts')"
-                            :class="['sidebar-link flex items-center px-4 py-3 rounded-lg group', currentPage === 'posts' ? 'bg-gray-700 text-white' : 'text-gray-300 hover:bg-gray-700']">
-                            <i data-feather="file-text" class="sidebar-icon w-5 h-5 mr-3 text-blue-400"></i>
-                            Posts
-                        </a>
-                        <a 
-                            href="#" 
-                            @click.prevent="setCurrentPage('users')"
-                            :class="['sidebar-link flex items-center px-4 py-3 rounded-lg group', currentPage === 'users' ? 'bg-gray-700 text-white' : 'text-gray-300 hover:bg-gray-700']">
-                            <i data-feather="users" class="sidebar-icon w-5 h-5 mr-3 text-green-400"></i>
-                            Users
-                        </a>
-                        <a 
-                            href="#" 
-                            @click.prevent="setCurrentPage('categories')"
-                            :class="['sidebar-link flex items-center px-4 py-3 rounded-lg group', currentPage === 'categories' ? 'bg-gray-700 text-white' : 'text-gray-300 hover:bg-gray-700']">
-                            <i data-feather="folder" class="sidebar-icon w-5 h-5 mr-3 text-purple-400"></i>
-                            Categories
-                        </a>
-                        <a 
-                            href="#" 
-                            @click.prevent="setCurrentPage('analytics')"
-                            :class="['sidebar-link flex items-center px-4 py-3 rounded-lg group', currentPage === 'analytics' ? 'bg-gray-700 text-white' : 'text-gray-300 hover:bg-gray-700']">
-                            <i data-feather="bar-chart-2" class="sidebar-icon w-5 h-5 mr-3 text-yellow-400"></i>
-                            Analytics
-                        </a>
-                        <a 
-                            href="#" 
-                            @click.prevent="setCurrentPage('settings')"
-                            :class="['sidebar-link flex items-center px-4 py-3 rounded-lg group', currentPage === 'settings' ? 'bg-gray-700 text-white' : 'text-gray-300 hover:bg-gray-700']">
-                            <i data-feather="settings" class="sidebar-icon w-5 h-5 mr-3 text-gray-400"></i>
-                            Settings
-                        </a>
-                    </nav>
-                </aside>
-            </transition>
+    <?php include('./resource/sidebar.php') ?>
 
             <!-- Main Content Area -->
             <main class="flex-1 overflow-y-auto p-4 md:p-6 bg-gray-900">
                 
                 <!-- Dashboard Section -->
                 <div v-if="currentPage === 'dashboard'">
+                    <!-- Dashboard Header -->
+                    <div class="flex justify-between items-center mb-6">
+                        <div>
+                            <h2 class="text-2xl font-bold text-white">Dashboard Overview</h2>
+                            <p class="text-gray-400" v-if="statsError">{{ statsError }}</p>
+                        </div>
+                        <button @click="fetchStats" :disabled="isLoadingStats" class="bg-primary hover:bg-primary-dark disabled:opacity-50 text-white px-4 py-2 rounded-lg flex items-center transition-all">
+                            <i data-feather="refresh-cw" class="w-4 h-4 mr-2" :class="{ 'animate-spin': isLoadingStats }"></i>
+                           
+                        </button>
+                    </div>
+                    
                     <!-- Stats Cards -->
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
                         <div class="bg-gray-800 rounded-xl p-6 shadow-lg border-l-4 border-primary">
                             <div class="flex items-center justify-between">
                                 <div>
                                     <p class="text-gray-400 text-sm font-medium">Total Posts</p>
-                                    <h3 class="text-2xl font-bold mt-1">{{ stats.totalPosts }}</h3>
-                                    <p class="text-green-400 text-xs mt-1 flex items-center">
-                                        <i data-feather="trending-up" class="w-3 h-3 mr-1"></i>
-                                        12.5% from last month
-                                    </p>
+                                    <h3 class="text-2xl font-bold mt-1" :class="{ 'animate-pulse': isLoadingStats }">
+                                        {{ isLoadingStats ? '...' : formatNumber(stats.totalPosts) }}
+                                    </h3>
+                                  
                                 </div>
                                 <div class="w-12 h-12 rounded-full bg-primary bg-opacity-10 flex items-center justify-center">
                                     <i data-feather="file-text" class="w-5 h-5 text-primary"></i>
@@ -256,11 +93,10 @@
                             <div class="flex items-center justify-between">
                                 <div>
                                     <p class="text-gray-400 text-sm font-medium">Total Views</p>
-                                    <h3 class="text-2xl font-bold mt-1">{{ stats.totalViews }}</h3>
-                                    <p class="text-green-400 text-xs mt-1 flex items-center">
-                                        <i data-feather="trending-up" class="w-3 h-3 mr-1"></i>
-                                        8.2% from last month
-                                    </p>
+                                    <h3 class="text-2xl font-bold mt-1" :class="{ 'animate-pulse': isLoadingStats }">
+                                        {{ isLoadingStats ? '...' : formatNumber(stats.totalViews) }}
+                                    </h3>
+                                   
                                 </div>
                                 <div class="w-12 h-12 rounded-full bg-blue-500 bg-opacity-10 flex items-center justify-center">
                                     <i data-feather="eye" class="w-5 h-5 text-blue-500"></i>
@@ -271,11 +107,10 @@
                             <div class="flex items-center justify-between">
                                 <div>
                                     <p class="text-gray-400 text-sm font-medium">Total Likes</p>
-                                    <h3 class="text-2xl font-bold mt-1">{{ stats.totalLikes }}</h3>
-                                    <p class="text-green-400 text-xs mt-1 flex items-center">
-                                        <i data-feather="trending-up" class="w-3 h-3 mr-1"></i>
-                                        5.3% from last month
-                                    </p>
+                                    <h3 class="text-2xl font-bold mt-1" :class="{ 'animate-pulse': isLoadingStats }">
+                                        {{ isLoadingStats ? '...' : formatNumber(stats.totalLikes) }}
+                                    </h3>
+                                  
                                 </div>
                                 <div class="w-12 h-12 rounded-full bg-green-500 bg-opacity-10 flex items-center justify-center">
                                     <i data-feather="heart" class="w-5 h-5 text-green-500"></i>
@@ -285,15 +120,60 @@
                         <div class="bg-gray-800 rounded-xl p-6 shadow-lg border-l-4 border-purple-500">
                             <div class="flex items-center justify-between">
                                 <div>
-                                    <p class="text-gray-400 text-sm font-medium">Active Users</p>
-                                    <h3 class="text-2xl font-bold mt-1">{{ stats.totalUsers }}</h3>
-                                    <p class="text-red-400 text-xs mt-1 flex items-center">
-                                        <i data-feather="trending-down" class="w-3 h-3 mr-1"></i>
-                                        2.1% from last month
-                                    </p>
+                                    <p class="text-gray-400 text-sm font-medium">Total Users</p>
+                                    <h3 class="text-2xl font-bold mt-1" :class="{ 'animate-pulse': isLoadingStats }">
+                                        {{ isLoadingStats ? '...' : formatNumber(stats.totalUsers) }}
+                                    </h3>
+                                   
                                 </div>
                                 <div class="w-12 h-12 rounded-full bg-purple-500 bg-opacity-10 flex items-center justify-center">
                                     <i data-feather="users" class="w-5 h-5 text-purple-500"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Additional Stats Cards -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+                        <div class="bg-gray-800 rounded-xl p-6 shadow-lg border-l-4 border-yellow-500">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-gray-400 text-sm font-medium">Total Shares</p>
+                                    <h3 class="text-2xl font-bold mt-1" :class="{ 'animate-pulse': isLoadingStats }">
+                                        {{ isLoadingStats ? '...' : formatNumber(stats.totalShares) }}
+                                    </h3>
+                                    <p class="text-blue-400 text-xs mt-1">Avg: {{ formatNumber(stats.avgLikesPerPost) }} per post</p>
+                                </div>
+                                <div class="w-12 h-12 rounded-full bg-yellow-500 bg-opacity-10 flex items-center justify-center">
+                                    <i data-feather="share-2" class="w-5 h-5 text-yellow-500"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-gray-800 rounded-xl p-6 shadow-lg border-l-4 border-pink-500">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-gray-400 text-sm font-medium">Total Saves</p>
+                                    <h3 class="text-2xl font-bold mt-1" :class="{ 'animate-pulse': isLoadingStats }">
+                                        {{ isLoadingStats ? '...' : formatNumber(stats.totalSaves) }}
+                                    </h3>
+                                    <p class="text-pink-400 text-xs mt-1">User engagement</p>
+                                </div>
+                                <div class="w-12 h-12 rounded-full bg-pink-500 bg-opacity-10 flex items-center justify-center">
+                                    <i data-feather="bookmark" class="w-5 h-5 text-pink-500"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-gray-800 rounded-xl p-6 shadow-lg border-l-4 border-cyan-500">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-gray-400 text-sm font-medium">Verified Users</p>
+                                    <h3 class="text-2xl font-bold mt-1" :class="{ 'animate-pulse': isLoadingStats }">
+                                        {{ isLoadingStats ? '...' : formatNumber(stats.verifiedUsers) }}
+                                    </h3>
+                                    <p class="text-cyan-400 text-xs mt-1">{{ stats.verificationRate }}% verified</p>
+                                </div>
+                                <div class="w-12 h-12 rounded-full bg-cyan-500 bg-opacity-10 flex items-center justify-center">
+                                    <i data-feather="check-circle" class="w-5 h-5 text-cyan-500"></i>
                                 </div>
                             </div>
                         </div>
@@ -304,14 +184,49 @@
                         <!-- Views Chart -->
                         <div class="bg-gray-800 rounded-xl p-6 shadow-lg">
                             <div class="flex items-center justify-between mb-4">
-                                <h3 class="font-semibold text-lg">Views Analytics</h3>
+                                <div>
+                                    <h3 class="font-semibold text-lg">Views Analytics</h3>
+                                    <div class="flex items-center space-x-4 mt-2">
+                                        <span class="text-sm text-gray-400">
+                                            Total: {{ formatNumber(viewsAnalytics.total_views) }} views
+                                        </span>
+                                        <span v-if="viewsAnalytics.summary.growth_rate !== 0" 
+                                              :class="viewsAnalytics.summary.growth_rate > 0 ? 'text-green-400' : 'text-red-400'" 
+                                              class="text-sm flex items-center">
+                                            <i :data-feather="viewsAnalytics.summary.growth_rate > 0 ? 'trending-up' : 'trending-down'" 
+                                               class="w-3 h-3 mr-1"></i>
+                                            {{ Math.abs(viewsAnalytics.summary.growth_rate) }}%
+                                        </span>
+                                    </div>
+                                </div>
                                 <div class="flex space-x-2">
-                                    <button class="px-3 py-1 text-xs rounded-lg bg-gray-700 text-gray-300 hover:bg-gray-600">Weekly</button>
-                                    <button class="px-3 py-1 text-xs rounded-lg bg-primary text-white">Monthly</button>
-                                    <button class="px-3 py-1 text-xs rounded-lg bg-gray-700 text-gray-300 hover:bg-gray-600">Yearly</button>
+                                    <button @click="changeViewsPeriod('weekly')" 
+                                            :disabled="isLoadingViews"
+                                            :class="viewsAnalytics.period === 'weekly' ? 'bg-primary text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'"
+                                            class="px-3 py-1 text-xs rounded-lg transition-all disabled:opacity-50">
+                                        Weekly
+                                    </button>
+                                    <button @click="changeViewsPeriod('monthly')" 
+                                            :disabled="isLoadingViews"
+                                            :class="viewsAnalytics.period === 'monthly' ? 'bg-primary text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'"
+                                            class="px-3 py-1 text-xs rounded-lg transition-all disabled:opacity-50">
+                                        Monthly
+                                    </button>
+                                    <button @click="changeViewsPeriod('yearly')" 
+                                            :disabled="isLoadingViews"
+                                            :class="viewsAnalytics.period === 'yearly' ? 'bg-primary text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'"
+                                            class="px-3 py-1 text-xs rounded-lg transition-all disabled:opacity-50">
+                                        Yearly
+                                    </button>
                                 </div>
                             </div>
-                            <div class="h-64">
+                            <div class="h-64 relative">
+                                <div v-if="isLoadingViews" class="absolute inset-0 flex items-center justify-center bg-gray-800 bg-opacity-75 rounded-lg">
+                                    <div class="flex items-center space-x-2 text-gray-400">
+                                        <i data-feather="loader" class="w-5 h-5 animate-spin"></i>
+                                        <span>Loading analytics...</span>
+                                    </div>
+                                </div>
                                 <canvas id="viewsChart"></canvas>
                             </div>
                         </div>
@@ -331,36 +246,14 @@
                         </div>
                     </div>
 
-                    <!-- Recent Activity -->
-                    <div class="bg-gray-800 rounded-xl p-6 shadow-lg">
-                        <div class="flex items-center justify-between mb-4">
-                            <h3 class="font-semibold text-lg">Recent Activity</h3>
-                            <button class="text-primary text-sm font-medium flex items-center hover:underline">
-                                View All
-                                <i data-feather="chevron-right" class="w-4 h-4 ml-1"></i>
-                            </button>
-                        </div>
-                        <div class="space-y-4">
-                            <div v-for="activity in recentActivities" :key="activity.id" class="flex items-start">
-                                <div class="flex-shrink-0 mt-1">
-                                    <div class="w-8 h-8 rounded-full flex items-center justify-center" :class="`bg-${activity.color}-500 bg-opacity-10`">
-                                        <i :data-feather="activity.icon" class="w-4 h-4" :class="`text-${activity.color}-500`"></i>
-                                    </div>
-                                </div>
-                                <div class="ml-3">
-                                    <p class="text-sm font-medium">{{ activity.action }}</p>
-                                    <p class="text-xs text-gray-400 mt-1">{{ activity.time }}</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                   
                 </div>
 
                 <!-- Posts Management Section -->
                 <div v-if="currentPage === 'posts'">
                     <div class="flex justify-between items-center mb-6">
                         <h2 class="text-2xl font-bold text-white">News Articles Management</h2>
-                        <button @click="showPostModal = true; editingPost = null" class="bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-lg flex items-center">
+                        <button @click="showPostModal = true; editingPost = null; resetPostForm()" class="bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-lg flex items-center">
                             <i data-feather="plus" class="w-4 h-4 mr-2"></i>
                             Add News Article
                         </button>
@@ -549,7 +442,14 @@
                     </div>
 
                     <!-- Categories Grid -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div v-if="isLoadingCategories" class="flex items-center justify-center py-12">
+                        <div class="text-center">
+                            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                            <p class="text-gray-400">Loading categories...</p>
+                        </div>
+                    </div>
+                    
+                    <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         <div v-for="category in categories" :key="category.id" class="bg-gray-800 rounded-xl p-6 shadow-lg">
                             <div class="flex items-center justify-between mb-4">
                                 <div class="flex items-center">
@@ -706,6 +606,122 @@
 
             </main>
         </div>
+
+        <!-- Add/Edit News Article Modal -->
+        <div v-if="showPostModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" @click="showPostModal = false">
+            <div class="bg-gray-800 rounded-xl p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto" @click.stop>
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-bold text-white">
+                        {{ editingPost ? 'Edit News Article' : 'Add New Article' }}
+                    </h3>
+                    <button @click="showPostModal = false" class="text-gray-400 hover:text-white">
+                        <i data-feather="x" class="w-6 h-6"></i>
+                    </button>
+                </div>
+
+                <form @submit.prevent="savePost" class="space-y-6">
+                    <!-- Article Title -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Article Title *</label>
+                        <input v-model="postForm.title" type="text" required 
+                               class="w-full bg-gray-700 text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                               placeholder="Enter article title...">
+                    </div>
+
+                    <!-- Article Description -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Description/Excerpt *</label>
+                        <textarea v-model="postForm.description" required rows="3"
+                                  class="w-full bg-gray-700 text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+                                  placeholder="Brief description or excerpt for the article..."></textarea>
+                    </div>
+
+                    <!-- Category Selection -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">Category *</label>
+                            <select v-model="postForm.category_id" @change="onCategoryChange" @focus="fetchCategories" :disabled="isLoadingCategories" required 
+                                    class="w-full bg-gray-700 text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50">
+                                <option value="">{{ isLoadingCategories ? 'Loading categories...' : 'Select a category' }}</option>
+                                <option v-for="category in categories" :key="category.id" :value="category.id">
+                                    {{ category.name }}
+                                </option>
+                            </select>
+                        </div>
+                        <div v-if="selectedCategorySubcategories.length > 0">
+                            <label class="block text-sm font-medium text-gray-300 mb-2">Subcategory</label>
+                            <select v-model="postForm.subcategory_id"
+                                    class="w-full bg-gray-700 text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
+                                <option value="">Select a subcategory (optional)</option>
+                                <option v-for="subcategory in selectedCategorySubcategories" :key="subcategory.id" :value="subcategory.id">
+                                    {{ subcategory.name }}
+                                </option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Article Content -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Article Content *</label>
+                        <textarea v-model="postForm.content" required rows="8"
+                                  class="w-full bg-gray-700 text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+                                  placeholder="Write your article content here..."></textarea>
+                    </div>
+
+                    <!-- Image Upload -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Featured Image</label>
+                        <div class="flex items-center space-x-4">
+                            <input type="file" @change="handleImageUpload" accept="image/*" 
+                                   class="hidden" ref="imageInput">
+                            <button type="button" @click="$refs.imageInput.click()" 
+                                    class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg flex items-center">
+                                <i data-feather="upload" class="w-4 h-4 mr-2"></i>
+                                Choose Image
+                            </button>
+                            <span v-if="postForm.image" class="text-sm text-gray-400">{{ postForm.imageName }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Status and Publishing Options -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Status Selection -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">Status *</label>
+                            <select v-model="postForm.status" required 
+                                    class="w-full bg-gray-700 text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
+                                <option value="draft">Draft</option>
+                                <option value="published">Published</option>
+                                <option value="scheduled">Scheduled</option>
+                            </select>
+                        </div>
+
+                        <!-- Schedule DateTime (only show when status is 'scheduled') -->
+                        <div v-if="postForm.status === 'scheduled'">
+                            <label class="block text-sm font-medium text-gray-300 mb-2">Schedule Date & Time *</label>
+                            <input v-model="postForm.scheduled_at" type="datetime-local" 
+                                   :required="postForm.status === 'scheduled'"
+                                   class="w-full bg-gray-700 text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
+                        </div>
+                    </div>
+
+                    <!-- Form Actions -->
+                    <div class="flex justify-end space-x-4 pt-6 border-t border-gray-600">
+                        <button type="button" @click="showPostModal = false" 
+                                class="px-6 py-2 text-gray-400 hover:text-white transition-colors">
+                            Cancel
+                        </button>
+                        <button type="submit" :disabled="isSubmittingPost"
+                                class="bg-primary hover:bg-primary-dark disabled:opacity-50 text-white px-6 py-2 rounded-lg flex items-center">
+                            <i v-if="isSubmittingPost" data-feather="loader" class="w-4 h-4 mr-2 animate-spin"></i>
+                            <i v-else data-feather="save" class="w-4 h-4 mr-2"></i>
+                            {{ isSubmittingPost ? 'Saving...' : (editingPost ? 'Update Article' : 'Save Article') }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
         <script>
             const { createApp, ref, onMounted, computed } = Vue;            createApp({
                 setup() {
@@ -723,6 +739,109 @@
                     const editingUser = ref(null);
                     const editingCategory = ref(null);
                     
+                    // Post form state
+                    const isSubmittingPost = ref(false);
+                    const selectedCategorySubcategories = ref([]);
+                    const postForm = ref({
+                        title: '',
+                        description: '',
+                        content: '',
+                        category_id: '',
+                        subcategory_id: '',
+                        status: 'draft',
+                        scheduled_at: '',
+                        image: null,
+                        imageName: ''
+                    });
+                    
+                    // Reset post form
+                    const resetPostForm = () => {
+                        postForm.value = {
+                            title: '',
+                            description: '',
+                            content: '',
+                            category_id: '',
+                            subcategory_id: '',
+                            status: 'draft',
+                            scheduled_at: '',
+                            image: null,
+                            imageName: ''
+                        };
+                        selectedCategorySubcategories.value = [];
+                    };
+                    
+                    // Handle category change to load subcategories
+                    const onCategoryChange = () => {
+                        selectedCategorySubcategories.value = [];
+                        postForm.value.subcategory_id = '';
+                        
+                        if (postForm.value.category_id) {
+                            const selectedCategory = categories.value.find(cat => cat.id == postForm.value.category_id);
+                            if (selectedCategory && selectedCategory.subcategories) {
+                                selectedCategorySubcategories.value = selectedCategory.subcategories;
+                            }
+                        }
+                    };
+                    
+                    // Handle image upload
+                    const handleImageUpload = (event) => {
+                        const file = event.target.files[0];
+                        if (file) {
+                            postForm.value.image = file;
+                            postForm.value.imageName = file.name;
+                        }
+                    };
+                    
+                    // Save post function
+                    const savePost = async () => {
+                        isSubmittingPost.value = true;
+                        
+                        try {
+                            const formData = new FormData();
+                            formData.append('title', postForm.value.title);
+                            formData.append('description', postForm.value.description);
+                            formData.append('content', postForm.value.content);
+                            formData.append('category_id', postForm.value.category_id);
+                            formData.append('subcategory_id', postForm.value.subcategory_id || '');
+                            formData.append('status', postForm.value.status);
+                            formData.append('scheduled_at', postForm.value.scheduled_at);
+                            
+                            if (postForm.value.image) {
+                                formData.append('image', postForm.value.image);
+                            }
+                            
+                            if (editingPost.value) {
+                                formData.append('id', editingPost.value.id);
+                            }
+                            
+                            const endpoint = editingPost.value ? 
+                                './backend/update_post.php' : 
+                                './backend/create_post.php';
+                            
+                            const response = await fetch(endpoint, {
+                                method: 'POST',
+                                body: formData
+                            });
+                            
+                            const result = await response.json();
+                            
+                            if (result.success) {
+                                alert(editingPost.value ? 'Article updated successfully!' : 'Article created successfully!');
+                                showPostModal.value = false;
+                                resetPostForm();
+                                editingPost.value = null;
+                               
+                            } else {
+                                alert('Error: ' + (result.message || 'Failed to save article'));
+                            }
+                        } catch (error) {
+                            console.error('Error saving post:', error);
+                            alert('Error saving article. Please try again.');
+                        } finally {
+                            isSubmittingPost.value = false;
+                        }
+                    };
+                    
                     // Search and filter states
                     const postSearch = ref('');
                     const postFilter = ref('all');
@@ -731,11 +850,224 @@
                     
                     // Stats data
                     const stats = ref({
-                        totalPosts: 2847,
-                        totalViews: 156789,
-                        totalLikes: 23456,
-                        totalUsers: 5672
+                        totalPosts: 0,
+                        totalViews: 0,
+                        totalLikes: 0,
+                        totalShares: 0,
+                        totalSaves: 0,
+                        totalUsers: 0,
+                        verifiedUsers: 0,
+                        avgLikesPerPost: 0,
+                        avgViewsPerPost: 0,
+                        verificationRate: 0
                     });
+                    
+                    const isLoadingStats = ref(false);
+                    const statsError = ref(null);
+                    
+                    // Function to format numbers with commas
+                    const formatNumber = (num) => {
+                        if (num === null || num === undefined) return '0';
+                        return new Intl.NumberFormat().format(num);
+                    };
+                    
+                    // Function to fetch stats from API
+                    const fetchStats = async () => {
+                        isLoadingStats.value = true;
+                        statsError.value = null;
+                        
+                        try {
+                            const response = await fetch('./backend/get_dashboard_stats.php', {
+                                method: 'GET',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Accept': 'application/json'
+                                }
+                            });
+                            
+                            if (!response.ok) {
+                                throw new Error(`HTTP error! status: ${response.status}`);
+                            }
+                            
+                            const result = await response.json();
+                            
+                            if (result.success && result.data) {
+                                stats.value = {
+                                    ...stats.value,
+                                    ...result.data
+                                };
+                                console.log('Stats fetched successfully:', result);
+                            } else {
+                                throw new Error(result.error || 'Failed to fetch statistics');
+                            }
+                        } catch (error) {
+                            console.error('Error fetching stats:', error);
+                            statsError.value = error.message;
+                            
+                            // Fallback to sample data if API fails
+                            stats.value = {
+                                totalPosts: 156,
+                                totalViews: 28947,
+                                totalLikes: 4523,
+                                totalShares: 892,
+                                totalSaves: 234,
+                                totalUsers: 2347,
+                                verifiedUsers: 1876,
+                                avgLikesPerPost: 29.0,
+                                avgViewsPerPost: 185.6,
+                                verificationRate: 79.92
+                            };
+                        } finally {
+                            isLoadingStats.value = false;
+                            // Re-render feather icons after data update
+                            setTimeout(() => feather.replace(), 100);
+                        }
+                    };
+                    
+
+                    const fetchCategories = async () => {
+                        if (categories.value.length > 0) {
+                           
+                            return;
+                        }
+                        
+                        isLoadingCategories.value = true;
+                        categoriesError.value = null;
+                        
+                        try {
+                            const response = await fetch('./backend/get_categories.php', {
+                                method: 'GET',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Accept': 'application/json'
+                                }
+                            });
+                          
+                            if (!response.ok) {
+                                throw new Error(`HTTP error! status: ${response.status}`);
+                            }
+                            
+                            const result = await response.json();
+                       
+                            if (result.success && result.data) {
+                                categories.value = result.data;
+                                console.log('Categories fetched successfully:', result);
+                            } else {
+                                throw new Error(result.error || 'Failed to fetch categories');
+                            }
+                        } catch (error) {
+                            console.error('Error fetching categories:', error);
+                            categoriesError.value = error.message;
+                            
+                            
+                            categories.value = [
+                                { id: 1, name: 'Technology', subcategories: [{ id: 1, name: 'AI & ML' }, { id: 2, name: 'Mobile Tech' }, { id: 3, name: 'Startups' }] },
+                                { id: 2, name: 'Business', subcategories: [{ id: 4, name: 'Markets' }, { id: 5, name: 'Economy' }, { id: 6, name: 'Finance' }] },
+                                { id: 3, name: 'Sports', subcategories: [{ id: 7, name: 'Cricket' }, { id: 8, name: 'Football' }, { id: 9, name: 'Olympics' }] },
+                                { id: 4, name: 'Politics', subcategories: [{ id: 10, name: 'Elections' }, { id: 11, name: 'Policy' }] },
+                                { id: 5, name: 'Health', subcategories: [{ id: 12, name: 'Medical' }, { id: 13, name: 'Wellness' }] }
+                            ];
+                        } finally {
+                            isLoadingCategories.value = false;
+                        }
+                    };
+                    
+                    // Views Analytics
+                    const viewsAnalytics = ref({
+                        period: 'monthly',
+                        total_views: 0,
+                        chart_data: {
+                            labels: [],
+                            datasets: []
+                        },
+                        summary: {
+                            current_period: 0,
+                            previous_period: 0,
+                            growth_rate: 0
+                        }
+                    });
+                    
+                    const isLoadingViews = ref(false);
+                    let viewsChart = null;
+                    
+                    // Function to fetch views analytics
+                    const fetchViewsAnalytics = async (period = 'monthly') => {
+                        isLoadingViews.value = true;
+                        
+                        try {
+                            const response = await fetch(`./backend/get_views_analytics.php?period=${period}`, {
+                                method: 'GET',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Accept': 'application/json'
+                                }
+                            });
+                            
+                            if (!response.ok) {
+                                throw new Error(`HTTP error! status: ${response.status}`);
+                            }
+                            
+                            const result = await response.json();
+                            
+                            if (result.success && result.data) {
+                                viewsAnalytics.value = result.data;
+                                updateViewsChart();
+                                console.log('Views analytics fetched:', result);
+                            } else {
+                                throw new Error(result.error || 'Failed to fetch views analytics');
+                            }
+                        } catch (error) {
+                            console.error('Error fetching views analytics:', error);
+                            // Use fallback data
+                            viewsAnalytics.value = {
+                                period: period,
+                                total_views: stats.value.totalViews || 0,
+                                chart_data: {
+                                    labels: period === 'weekly' ? 
+                                        ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] :
+                                        period === 'yearly' ? 
+                                        ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] :
+                                        ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+                                    datasets: [{
+                                        label: 'Views',
+                                        data: period === 'weekly' ? 
+                                            [150, 280, 320, 410, 380, 450, 520] :
+                                            period === 'yearly' ?
+                                            [2800, 3200, 3800, 4200, 4800, 5200, 4900, 5600, 6100, 5800, 6400, 7200] :
+                                            [1200, 1580, 1820, 2100],
+                                        borderColor: '#0ea5e9',
+                                        backgroundColor: 'rgba(14, 165, 233, 0.1)',
+                                        borderWidth: 2,
+                                        tension: 0.4,
+                                        fill: true
+                                    }]
+                                },
+                                summary: {
+                                    current_period: 2100,
+                                    previous_period: 1820,
+                                    growth_rate: 15.4
+                                }
+                            };
+                            updateViewsChart();
+                        } finally {
+                            isLoadingViews.value = false;
+                        }
+                    };
+                    
+                    // Function to update views chart
+                    const updateViewsChart = () => {
+                        if (viewsChart) {
+                            viewsChart.data.labels = viewsAnalytics.value.chart_data.labels;
+                            viewsChart.data.datasets = viewsAnalytics.value.chart_data.datasets;
+                            viewsChart.update();
+                        }
+                    };
+                    
+                    // Function to change views period
+                    const changeViewsPeriod = (period) => {
+                        viewsAnalytics.value.period = period;
+                        fetchViewsAnalytics(period);
+                    };
                     
                     // Handle window resize
                     const handleResize = () => {
@@ -753,6 +1085,11 @@
                         currentPage.value = page;
                         if (isMobile.value) {
                             sidebarOpen.value = false;
+                        }
+                        
+                        // Load categories when categories page is accessed
+                        if (page === 'categories') {
+                            fetchCategories();
                         }
                     };
                     
@@ -818,6 +1155,27 @@
                     
                     const editPost = (post) => {
                         editingPost.value = { ...post };
+                        postForm.value = {
+                            title: post.title || '',
+                            description: post.description || '',
+                            content: post.content || '',
+                            category_id: post.category_id || '',
+                            subcategory_id: post.subcategory_id || '',
+                            status: post.status || 'draft',
+                            scheduled_at: post.scheduled_at || '',
+                            image: null,
+                            imageName: post.image ? 'Current image' : ''
+                        };
+                        
+                        // Load subcategories for the selected category
+                        selectedCategorySubcategories.value = [];
+                        if (post.category_id) {
+                            const selectedCategory = categories.value.find(cat => cat.id == post.category_id);
+                            if (selectedCategory && selectedCategory.subcategories) {
+                                selectedCategorySubcategories.value = selectedCategory.subcategories;
+                            }
+                        }
+                        
                         showPostModal.value = true;
                     };
                     
@@ -882,16 +1240,9 @@
                         { id: 6, name: 'Kavya Reddy', email: 'kavya@fimnews.com', role: 'editor', status: 'active', joinedDate: 'Sep 01, 2024', postsCount: 18 }
                     ]);
                     
-                    const categories = ref([
-                        { id: 1, name: 'Technology', description: 'Latest technology news and innovations in India', postsCount: 287, subcategories: [{ id: 1, name: 'Startups' }, { id: 2, name: 'AI & ML' }, { id: 3, name: 'Mobile Tech' }] },
-                        { id: 2, name: 'Business', description: 'Indian business news, market updates, and economy', postsCount: 234, subcategories: [{ id: 4, name: 'Markets' }, { id: 5, name: 'Economy' }, { id: 6, name: 'Finance' }] },
-                        { id: 3, name: 'Sports', description: 'Cricket, football, and other sports news', postsCount: 198, subcategories: [{ id: 7, name: 'Cricket' }, { id: 8, name: 'Football' }, { id: 9, name: 'Olympics' }] },
-                        { id: 4, name: 'Politics', description: 'Political news and government updates', postsCount: 167, subcategories: [{ id: 10, name: 'Elections' }, { id: 11, name: 'Policy' }] },
-                        { id: 5, name: 'Health', description: 'Health news, medical breakthroughs, and wellness', postsCount: 145, subcategories: [{ id: 12, name: 'Medical' }, { id: 13, name: 'Wellness' }] },
-                        { id: 6, name: 'Education', description: 'Educational news, exams, and academic updates', postsCount: 123, subcategories: [{ id: 14, name: 'Exams' }, { id: 15, name: 'Universities' }] },
-                        { id: 7, name: 'Entertainment', description: 'Bollywood, regional cinema, and celebrity news', postsCount: 189, subcategories: [{ id: 16, name: 'Bollywood' }, { id: 17, name: 'Regional' }, { id: 18, name: 'Music' }] },
-                        { id: 8, name: 'Lifestyle', description: 'Fashion, food, travel, and lifestyle trends', postsCount: 156, subcategories: [{ id: 19, name: 'Fashion' }, { id: 20, name: 'Food' }, { id: 21, name: 'Travel' }] }
-                    ]);
+                    const categories = ref([]);
+                    const isLoadingCategories = ref(false);
+                    const categoriesError = ref(null);
                     
                     const analytics = ref({
                         mostViewed: { title: 'Breaking: Technology Market Shows Strong Growth in 2024', views: 4567 },
@@ -919,6 +1270,9 @@
                     onMounted(() => {
                         feather.replace();
                         
+                        // Fetch dashboard statistics
+                        fetchStats();
+                        
                         // Add event listener for window resize
                         window.addEventListener('resize', handleResize);
                         
@@ -930,49 +1284,59 @@
                             // Initialize charts
                             const viewsCtx = document.getElementById('viewsChart')?.getContext('2d');
                             if (viewsCtx) {
-                                new Chart(viewsCtx, {
-                                type: 'line',
-                                data: {
-                                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
-                                    datasets: [{
-                                        label: 'Views',
-                                        data: [3200, 4500, 5200, 5800, 6700, 7200, 8400],
-                                        borderColor: '#0ea5e9',
-                                        backgroundColor: 'rgba(14, 165, 233, 0.1)',
-                                        borderWidth: 2,
-                                        tension: 0.4,
-                                        fill: true
-                                    }]
-                                },
-                                options: {
-                                    responsive: true,
-                                    maintainAspectRatio: false,
-                                    plugins: {
-                                        legend: {
-                                            display: false
-                                        }
+                                viewsChart = new Chart(viewsCtx, {
+                                    type: 'line',
+                                    data: {
+                                        labels: [],
+                                        datasets: []
                                     },
-                                    scales: {
-                                        y: {
-                                            beginAtZero: true,
-                                            grid: {
-                                                color: 'rgba(255, 255, 255, 0.05)'
-                                            },
-                                            ticks: {
-                                                color: 'rgba(255, 255, 255, 0.6)'
-                                            }
-                                        },
-                                        x: {
-                                            grid: {
+                                    options: {
+                                        responsive: true,
+                                        maintainAspectRatio: false,
+                                        plugins: {
+                                            legend: {
                                                 display: false
                                             },
-                                            ticks: {
-                                                color: 'rgba(255, 255, 255, 0.6)'
+                                            tooltip: {
+                                                backgroundColor: 'rgba(17, 24, 39, 0.8)',
+                                                titleColor: 'rgba(255, 255, 255, 0.9)',
+                                                bodyColor: 'rgba(255, 255, 255, 0.9)',
+                                                borderColor: 'rgba(59, 130, 246, 0.5)',
+                                                borderWidth: 1,
+                                                callbacks: {
+                                                    label: function(context) {
+                                                        return `Views: ${formatNumber(context.parsed.y)}`;
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        scales: {
+                                            y: {
+                                                beginAtZero: true,
+                                                grid: {
+                                                    color: 'rgba(255, 255, 255, 0.05)'
+                                                },
+                                                ticks: {
+                                                    color: 'rgba(255, 255, 255, 0.6)',
+                                                    callback: function(value) {
+                                                        return formatNumber(value);
+                                                    }
+                                                }
+                                            },
+                                            x: {
+                                                grid: {
+                                                    display: false
+                                                },
+                                                ticks: {
+                                                    color: 'rgba(255, 255, 255, 0.6)'
+                                                }
                                             }
                                         }
                                     }
-                                }
-                            });
+                                });
+                                
+                                // Fetch views analytics data
+                                fetchViewsAnalytics('monthly');
                             }
                             
                             const categoriesCtx = document.getElementById('categoriesChart')?.getContext('2d');
@@ -1031,6 +1395,23 @@
                         recentPosts,
                         recentActivities,
                         
+                        // API States
+                        isLoadingStats,
+                        statsError,
+                        isLoadingViews,
+                        isLoadingCategories,
+                        categoriesError,
+                        
+                        // Analytics Data
+                        viewsAnalytics,
+                        
+                        // API Functions
+                        fetchStats,
+                        fetchCategories,
+                        fetchViewsAnalytics,
+                        changeViewsPeriod,
+                        formatNumber,
+                        
                         // Modal states
                         showPostModal,
                         showUserModal,
@@ -1038,6 +1419,15 @@
                         editingPost,
                         editingUser,
                         editingCategory,
+                        
+                        // Post Form
+                        postForm,
+                        isSubmittingPost,
+                        selectedCategorySubcategories,
+                        resetPostForm,
+                        onCategoryChange,
+                        handleImageUpload,
+                        savePost,
                         
                         // Search & filter
                         postSearch,
