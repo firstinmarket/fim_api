@@ -628,13 +628,14 @@
                                placeholder="Enter article title...">
                     </div>
 
-                    <!-- Article Description -->
+           <!-- Article Content -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-300 mb-2">Description/Excerpt *</label>
-                        <textarea v-model="postForm.description" required rows="3"
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Article Content *</label>
+                        <textarea v-model="postForm.content" required rows="8"
                                   class="w-full bg-gray-700 text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary resize-none"
-                                  placeholder="Brief description or excerpt for the article..."></textarea>
+                                  placeholder="Write your article content here..."></textarea>
                     </div>
+                  
 
                     <!-- Category Selection -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -660,13 +661,7 @@
                         </div>
                     </div>
 
-                    <!-- Article Content -->
-                    <div>
-                        <label class="block text-sm font-medium text-gray-300 mb-2">Article Content *</label>
-                        <textarea v-model="postForm.content" required rows="8"
-                                  class="w-full bg-gray-700 text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary resize-none"
-                                  placeholder="Write your article content here..."></textarea>
-                    </div>
+                    
 
                     <!-- Image Upload -->
                     <div>
@@ -744,7 +739,7 @@
                     const selectedCategorySubcategories = ref([]);
                     const postForm = ref({
                         title: '',
-                        description: '',
+                      
                         content: '',
                         category_id: '',
                         subcategory_id: '',

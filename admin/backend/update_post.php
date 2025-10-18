@@ -15,7 +15,7 @@ try {
         throw new Exception('Only POST method allowed');
     }
     
-    // Validate required fields
+ 
     $id = (int)($_POST['id'] ?? 0);
     $title = trim($_POST['title'] ?? '');
     $description = trim($_POST['description'] ?? '');
