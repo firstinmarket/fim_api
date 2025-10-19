@@ -1,13 +1,13 @@
 <?php
-// $host = 'localhost';
-// $db   = 'anbinvar_fim';
-// $user = 'anbinvar_fim';
-// $pass = 'anbinvar_fim';
-
 $host = 'localhost';
-$db   = 'FIMNEWS';
-$user = 'root';
-$pass = '';
+$db   = 'anbinvar_fim';
+$user = 'anbinvar_fim';
+$pass = 'anbinvar_fim';
+
+// $host = 'localhost';
+// $db   = 'FIMNEWS';
+// $user = 'root';
+// $pass = '';
 
 $charset = 'utf8mb4';
 
