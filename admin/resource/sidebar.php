@@ -43,13 +43,7 @@
                     <i data-feather="bar-chart-2" class="sidebar-icon w-5 h-5 mr-3 text-yellow-400"></i>
                     Analytics
                 </a>
-                <a 
-                    href="#" 
-                    @click.prevent="currentPage = 'settings'"
-                    :class="['sidebar-link flex items-center px-4 py-3 rounded-lg group', currentPage === 'settings' ? 'bg-gray-700 text-white' : 'text-gray-300 hover:bg-gray-700']">
-                    <i data-feather="settings" class="sidebar-icon w-5 h-5 mr-3 text-gray-400"></i>
-                    Settings
-                </a>
+               
             </nav>
         </aside>
 
@@ -78,7 +72,7 @@
                         'text-green-400': currentPage === 'users',
                         'text-purple-400': currentPage === 'categories',
                         'text-yellow-400': currentPage === 'analytics',
-                        'text-gray-400': currentPage === 'settings'
+                        
                     }">
                         {{ pageTitles[currentPage] || 'Dashboard Overview' }}
                     </h2>
@@ -87,9 +81,11 @@
                     
                
                     <div class="flex items-center space-x-2 cursor-pointer">
-                        <div class="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
-                            <i data-feather="log-out" class="w-4 h-4 text-white"></i>
-                        </div>
+                        <a href="logout.php" title="Logout">
+                            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center cursor-pointer">
+                                <i data-feather="log-out" class="w-4 h-4 text-white"></i>
+                            </div>
+                        </a>
                         
                     </div>
                 </div>
@@ -150,13 +146,7 @@
                             <i data-feather="bar-chart-2" class="sidebar-icon w-5 h-5 mr-3 text-yellow-400"></i>
                             Analytics
                         </a>
-                        <a 
-                            href="#" 
-                            @click.prevent="setCurrentPage('settings')"
-                            :class="['sidebar-link flex items-center px-4 py-3 rounded-lg group', currentPage === 'settings' ? 'bg-gray-700 text-white' : 'text-gray-300 hover:bg-gray-700']">
-                            <i data-feather="settings" class="sidebar-icon w-5 h-5 mr-3 text-gray-400"></i>
-                            Settings
-                        </a>
+                      
                     </nav>
                 </aside>
             </transition>

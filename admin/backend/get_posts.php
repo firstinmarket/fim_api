@@ -12,7 +12,7 @@ require_once '../resource/conn.php';
 
 try {
     $pdo = getDB();
-    $stmt = $pdo->prepare("SELECT id, title, image, content, likes_count, shares_count, saves_count, views_count, category_id, created_at, updated_at, status, scheduled_time FROM posts WHERE 1 ORDER BY created_at DESC");
+    $stmt = $pdo->prepare("SELECT posts.id, posts.title, posts.image, posts.content, posts.likes_count, posts.shares_count, posts.saves_count, posts.views_count, posts.category_id, posts.category_id, subcategories.name AS subcategory_name, posts.created_at, posts.updated_at, posts.language, posts.status, posts.scheduled_time FROM posts LEFT JOIN subcategories ON posts.category_id = subcategories.id ORDER BY posts.created_at DESC");
     $stmt->execute();
     $posts = $stmt->fetchAll(PDO::FETCH_ASSOC);
     echo json_encode([

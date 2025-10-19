@@ -18,12 +18,12 @@ try {
  
     $id = (int)($_POST['id'] ?? 0);
     $title = trim($_POST['title'] ?? '');
-    $description = trim($_POST['description'] ?? '');
     $content = trim($_POST['content'] ?? '');
     $category_id = (int)($_POST['category_id'] ?? 0);
     $subcategory_id = !empty($_POST['subcategory_id']) ? (int)$_POST['subcategory_id'] : null;
     $status = $_POST['status'] ?? 'draft';
     $scheduled_at = $_POST['scheduled_at'] ?? null;
+    $language = $_POST['language'] ?? 'english';
     
     if ($id <= 0) {
         throw new Exception('Valid post ID is required');
@@ -33,9 +33,7 @@ try {
         throw new Exception('Title is required');
     }
     
-    if (empty($description)) {
-        throw new Exception('Description is required');
-    }
+   
     
     if (empty($content)) {
         throw new Exception('Content is required');
@@ -104,15 +102,18 @@ try {
     // Update database
     $stmt = $pdo->prepare("
         UPDATE posts 
-        SET title = ?, content = ?, image = ?, category_id = ?, updated_at = NOW()
+        SET title = ?, content = ?, image = ?, category_id = ?, status = ?, scheduled_time = ?, language = ?, updated_at = NOW()
         WHERE id = ?
     ");
-    
+
     $stmt->execute([
         $title,
         $content,
         $imagePath,
         $category_id,
+        $status,
+        $scheduled_at,
+        $language,
         $id
     ]);
     
@@ -123,13 +124,14 @@ try {
         'data' => [
             'id' => $id,
             'title' => $title,
-            'description' => $description,
+           
             'content' => $content,
             'image' => $imagePath,
             'category_id' => $category_id,
             'subcategory_id' => $subcategory_id,
             'status' => $status,
-            'scheduled_at' => $scheduled_at
+            'scheduled_at' => $scheduled_at,
+            'language' => $language
         ]
     ]);
     

@@ -1,3 +1,26 @@
+<?php
+session_start();
+if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== true) {
+    header('Location: login.php');
+    exit();
+}
+?>
+<?php
+include './resource/conn.php';
+$pdo = getDB();
+try {
+    $stmt = $pdo->prepare("
+        UPDATE posts
+        SET status = 'published', updated_at = NOW()
+        WHERE status = 'scheduled'
+          AND scheduled_time IS NOT NULL
+          AND scheduled_time <= NOW()
+    ");
+    $stmt->execute();
+} catch (Exception $e) {
+    
+}
+?>
 <!DOCTYPE html>
 <html lang="en" class="dark">
 <head>
@@ -281,61 +304,44 @@
                             <table class="min-w-full divide-y divide-gray-700">
                                 <thead class="bg-gray-700">
                                     <tr>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Post</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Category</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Status</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Stats</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Date</th>
-                                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-300 uppercase tracking-wider">Actions</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Post</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Category</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Status</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Stats</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Date</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Language</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody class="bg-gray-800 divide-y divide-gray-700">
-                                    <tr v-for="post in filteredPosts" :key="post.id" class="hover:bg-gray-700">
-                                        <td class="px-6 py-4">
+                                    <tr v-for="post in filteredPosts" :key="post.id" class="hover:bg-gray-700 transition">
+                                        <td class="px-6 py-4 whitespace-nowrap">
                                             <div class="flex items-center">
-                                                <div class="h-12 w-12 flex-shrink-0">
-                                                    <img class="h-12 w-12 rounded-lg object-cover" :src="post.image" :alt="post.title">
-                                                </div>
-                                                <div class="ml-4">
-                                                    <div class="text-sm font-medium text-white">{{ post.title }}</div>
-                                                    <div class="text-sm text-gray-400">{{ post.author }}</div>
-                                                </div>
+                                                <img :src="'../api/uploads/' + post.image" alt="" class="w-10 h-10 rounded mr-3" />
+                                                <span class="font-semibold text-white cursor-pointer" @click="showPostDetails(post)">{{ post.title }}</span>
                                             </div>
                                         </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">{{post.subcategory_name }}</td>
                                         <td class="px-6 py-4 whitespace-nowrap">
-                                            <span class="px-2 py-1 text-xs font-medium bg-purple-500 bg-opacity-10 text-purple-400 rounded-full">
-                                                {{ post.category }}
-                                            </span>
+                                            <span :class="getStatusClass(post.status)">{{ post.status }}</span>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
-                                            <span :class="getStatusClass(post.status)">
-                                                {{ post.status }}
-                                            </span>
+                                            <span class="text-xs text-gray-400">Likes: {{ post.likes_count }} | Shares: {{ post.shares_count }} | Saves: {{ post.saves_count }} | Views: {{ post.views_count }}</span>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
-                                            <div class="flex space-x-4">
-                                                <span class="flex items-center">
-                                                    <i data-feather="eye" class="w-4 h-4 mr-1"></i>
-                                                    {{ post.views }}
-                                                </span>
-                                                <span class="flex items-center">
-                                                    <i data-feather="heart" class="w-4 h-4 mr-1"></i>
-                                                    {{ post.likes }}
-                                                </span>
-                                            </div>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
-                                            {{ post.date }}
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            <button @click="viewPost(post)" class="text-blue-400 hover:text-blue-300 mr-3">
-                                                <i data-feather="eye" class="w-4 h-4"></i>
+                                        <td class="px-6 py-4 whitespace-nowrap">{{ post.created_at }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap capitalize">{{ post.language }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <button @click="openPostDetails(post)" class="text-blue-400 hover:text-blue-600 mr-2" title="View">
+                                                <!-- Eye SVG -->
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                             </button>
-                                            <button @click="editPost(post)" class="text-primary hover:text-primary-dark mr-3">
-                                                <i data-feather="edit" class="w-4 h-4"></i>
+                                            <button @click="editPost(post)" class="text-primary hover:text-primary-dark mr-2" title="Edit">
+                                                <!-- Edit SVG -->
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5h2m-1 0v14m-7-7h14"/></svg>
                                             </button>
-                                            <button @click="deletePost(post.id)" class="text-red-400 hover:text-red-300">
-                                                <i data-feather="trash-2" class="w-4 h-4"></i>
+                                            <button @click="deletePost(post.id)" class="text-red-500 hover:text-red-700" title="Delete">
+                                                <!-- Trash SVG -->
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                                             </button>
                                         </td>
                                     </tr>
@@ -361,13 +367,7 @@
                             <div class="flex-1">
                                 <input v-model="userSearch" type="text" placeholder="Search users..." class="w-full bg-gray-700 text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
                             </div>
-                            <select v-model="userRoleFilter" class="bg-gray-700 text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
-                                <option value="all">All Roles</option>
-                                <option value="admin">Admin</option>
-                                <option value="editor">Editor</option>
-                                <option value="contributor">Contributor</option>
-                                <option value="viewer">Subscriber</option>
-                            </select>
+                           
                         </div>
                     </div>
 
@@ -378,10 +378,11 @@
                                 <thead class="bg-gray-700">
                                     <tr>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">User</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Role</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Status</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Joined</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Posts</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Phone</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Joined Date</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Language</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Requests</th>
+                                  
                                         <th class="px-6 py-3 text-right text-xs font-medium text-gray-300 uppercase tracking-wider">Actions</th>
                                     </tr>
                                 </thead>
@@ -401,27 +402,29 @@
                                             </div>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
-                                            <span :class="getRoleClass(user.role)">
-                                                {{ user.role }}
+                                            <span class="text-sm text-gray-400">
+                                                {{ user.mobile }}
                                             </span>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <span :class="user.status === 'active' ? 'px-2 py-1 text-xs font-medium bg-green-500 bg-opacity-10 text-green-400 rounded-full' : 'px-2 py-1 text-xs font-medium bg-red-500 bg-opacity-10 text-red-400 rounded-full'">
-                                                {{ user.status }}
+                                                {{ user.created_at }}
                                             </span>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
-                                            {{ user.joinedDate }}
+                                            {{ user.language }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
-                                            {{ user.postsCount }}
+                                            {{ user.remove }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            <button @click="editUser(user)" class="text-primary hover:text-primary-dark mr-3">
-                                                <i data-feather="edit" class="w-4 h-4"></i>
+                                            <button @click="editUser(user)" class="text-primary hover:text-primary-dark mr-3" title="Update">
+                                                <!-- Edit SVG -->
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5h2m-1 0v14m-7-7h14"/></svg>
                                             </button>
-                                            <button @click="toggleUserStatus(user)" :class="user.status === 'active' ? 'text-red-400 hover:text-red-300' : 'text-green-400 hover:text-green-300'">
-                                                <i :data-feather="user.status === 'active' ? 'user-x' : 'user-check'" class="w-4 h-4"></i>
+                                            <button @click="deleteUser(user.id)" class="text-red-400 hover:text-red-300" title="Delete">
+                                                <!-- Trash SVG -->
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                                             </button>
                                         </td>
                                     </tr>
@@ -432,11 +435,43 @@
                 </div>
 
                 <!-- Categories Management Section -->
+                <!-- Category Add/Edit Modal -->
+                <div v-if="showCategoryModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" @click="showCategoryModal = false">
+                    <div class="bg-gray-800 rounded-xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto" @click.stop>
+                        <div class="flex justify-between items-center mb-6">
+                            <h3 class="text-xl font-bold text-white">{{ editingCategory ? 'Edit Category' : 'Add Category' }}</h3>
+                            <button @click="showCategoryModal = false" class="text-gray-400 hover:text-white">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                            </button>
+                        </div>
+                        <form @submit.prevent="saveCategory" class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-300 mb-2">Category Name</label>
+                                <input v-model="editingCategory.name" type="text" class="w-full bg-gray-700 text-white px-4 py-2 rounded-lg" required>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-300 mb-2">Subcategories</label>
+                                <div v-for="(sub, idx) in editingCategory.subcategories" :key="sub.id || idx" class="flex items-center mb-2 gap-2">
+                                    <input v-model="sub.name" type="text" class="flex-1 bg-gray-700 text-white px-3 py-2 rounded-lg" placeholder="Subcategory name" required>
+                                    <button type="button" @click="editingCategory.subcategories.splice(idx, 1)" class="text-red-400 hover:text-red-300" title="Remove">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                    </button>
+                                </div>
+                                <button type="button" @click="editingCategory.subcategories.push({ name: '' })" class="mt-2 bg-primary hover:bg-primary-dark text-white px-3 py-1 rounded-lg text-xs">+ Add Subcategory</button>
+                            </div>
+                            <div class="flex justify-end space-x-4 pt-4">
+                                <button type="button" @click="showCategoryModal = false" class="px-6 py-2 text-gray-400 hover:text-white">Cancel</button>
+                                <button type="submit" class="bg-primary hover:bg-primary-dark text-white px-6 py-2 rounded-lg">{{ editingCategory.id ? 'Update' : 'Add' }}</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
                 <div v-if="currentPage === 'categories'">
                     <div class="flex justify-between items-center mb-6">
                         <h2 class="text-2xl font-bold text-white">Categories Management</h2>
                         <button @click="showCategoryModal = true; editingCategory = null" class="bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-lg flex items-center">
-                            <i data-feather="folder-plus" class="w-4 h-4 mr-2"></i>
+                            <!-- Folder Plus SVG -->
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4h16v16H4V4zm8 8v4m0-4h4m-4 0H8"/></svg>
                             Add Category
                         </button>
                     </div>
@@ -448,13 +483,14 @@
                             <p class="text-gray-400">Loading categories...</p>
                         </div>
                     </div>
-                    
+
                     <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         <div v-for="category in categories" :key="category.id" class="bg-gray-800 rounded-xl p-6 shadow-lg">
                             <div class="flex items-center justify-between mb-4">
                                 <div class="flex items-center">
                                     <div class="w-12 h-12 rounded-full bg-purple-500 bg-opacity-10 flex items-center justify-center mr-4">
-                                        <i data-feather="folder" class="w-6 h-6 text-purple-400"></i>
+                                        <!-- Folder SVG -->
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h18M3 7v10a2 2 0 002 2h14a2 2 0 002-2V7"/></svg>
                                     </div>
                                     <div>
                                         <h3 class="text-lg font-semibold text-white">{{ category.name }}</h3>
@@ -462,11 +498,13 @@
                                     </div>
                                 </div>
                                 <div class="flex space-x-2">
-                                    <button @click="editCategory(category)" class="text-primary hover:text-primary-dark">
-                                        <i data-feather="edit" class="w-4 h-4"></i>
+                                    <button @click="editCategory(category)" class="text-primary hover:text-primary-dark" title="Edit">
+                                        <!-- Edit SVG -->
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5h2m-1 0v14m-7-7h14"/></svg>
                                     </button>
-                                    <button @click="deleteCategory(category.id)" class="text-red-400 hover:text-red-300">
-                                        <i data-feather="trash-2" class="w-4 h-4"></i>
+                                    <button @click="deleteCategory(category.id)" class="text-red-400 hover:text-red-300" title="Delete">
+                                        <!-- Trash SVG -->
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                                     </button>
                                 </div>
                             </div>
@@ -493,8 +531,8 @@
                             <div class="flex items-center justify-between">
                                 <div>
                                     <p class="text-gray-400 text-sm font-medium">Most Viewed Post</p>
-                                    <h3 class="text-xl font-bold mt-1 text-white">{{ analytics.mostViewed.title }}</h3>
-                                    <p class="text-primary text-sm mt-1">{{ analytics.mostViewed.views }} views</p>
+                                    <h3 class="text-xl font-bold mt-1 text-white">{{ analytics.mostViewed && analytics.mostViewed.title ? analytics.mostViewed.title : 'N/A' }}</h3>
+                                    <p class="text-primary text-sm mt-1">{{ analytics.mostViewed && analytics.mostViewed.views !== undefined ? analytics.mostViewed.views : 0 }} views</p>
                                 </div>
                                 <div class="w-12 h-12 rounded-full bg-blue-500 bg-opacity-10 flex items-center justify-center">
                                     <i data-feather="trending-up" class="w-6 h-6 text-blue-400"></i>
@@ -505,26 +543,26 @@
                             <div class="flex items-center justify-between">
                                 <div>
                                     <p class="text-gray-400 text-sm font-medium">Most Liked Post</p>
-                                    <h3 class="text-xl font-bold mt-1 text-white">{{ analytics.mostLiked.title }}</h3>
-                                    <p class="text-green-400 text-sm mt-1">{{ analytics.mostLiked.likes }} likes</p>
+                                    <h3 class="text-xl font-bold mt-1 text-white">{{ analytics.mostLiked && analytics.mostLiked.title ? analytics.mostLiked.title : 'N/A' }}</h3>
+                                    <p class="text-green-400 text-sm mt-1">{{ analytics.mostLiked && analytics.mostLiked.likes !== undefined ? analytics.mostLiked.likes : 0 }} likes</p>
                                 </div>
                                 <div class="w-12 h-12 rounded-full bg-green-500 bg-opacity-10 flex items-center justify-center">
                                     <i data-feather="heart" class="w-6 h-6 text-green-400"></i>
                                 </div>
                             </div>
                         </div>
-                        <div class="bg-gray-800 rounded-xl p-6 shadow-lg">
+                        <!-- <div class="bg-gray-800 rounded-xl p-6 shadow-lg">
                             <div class="flex items-center justify-between">
                                 <div>
                                     <p class="text-gray-400 text-sm font-medium">Top Author</p>
-                                    <h3 class="text-xl font-bold mt-1 text-white">{{ analytics.topAuthor.name }}</h3>
-                                    <p class="text-purple-400 text-sm mt-1">{{ analytics.topAuthor.posts }} posts</p>
+                                    <h3 class="text-xl font-bold mt-1 text-white">{{ analytics.topAuthor && analytics.topAuthor.name ? analytics.topAuthor.name : 'N/A' }}</h3>
+                                    <p class="text-purple-400 text-sm mt-1">{{ analytics.topAuthor && analytics.topAuthor.posts !== undefined ? analytics.topAuthor.posts : 0 }} posts</p>
                                 </div>
                                 <div class="w-12 h-12 rounded-full bg-purple-500 bg-opacity-10 flex items-center justify-center">
                                     <i data-feather="award" class="w-6 h-6 text-purple-400"></i>
                                 </div>
                             </div>
-                        </div>
+                        </div> -->
                     </div>
 
                     <!-- Analytics Charts -->
@@ -544,65 +582,7 @@
                     </div>
                 </div>
 
-                <!-- Settings Section -->
-                <div v-if="currentPage === 'settings'">
-                    <h2 class="text-2xl font-bold text-white mb-6">Settings</h2>
-                    
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <!-- General Settings -->
-                        <div class="bg-gray-800 rounded-xl p-6 shadow-lg">
-                            <h3 class="text-lg font-semibold text-white mb-4">General Settings</h3>
-                            <div class="space-y-4">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-300 mb-2">Site Name</label>
-                                    <input v-model="settings.siteName" type="text" class="w-full bg-gray-700 text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-300 mb-2">Site Description</label>
-                                    <textarea v-model="settings.siteDescription" rows="3" class="w-full bg-gray-700 text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"></textarea>
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-300 mb-2">Contact Email</label>
-                                    <input v-model="settings.contactEmail" type="email" class="w-full bg-gray-700 text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Security Settings -->
-                        <div class="bg-gray-800 rounded-xl p-6 shadow-lg">
-                            <h3 class="text-lg font-semibold text-white mb-4">Security Settings</h3>
-                            <div class="space-y-4">
-                                <div class="flex items-center justify-between">
-                                    <div>
-                                        <p class="text-white font-medium">Two-Factor Authentication</p>
-                                        <p class="text-gray-400 text-sm">Add an extra layer of security</p>
-                                    </div>
-                                    <button class="bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-lg text-sm">
-                                        Enable
-                                    </button>
-                                </div>
-                                <div class="flex items-center justify-between">
-                                    <div>
-                                        <p class="text-white font-medium">Session Timeout</p>
-                                        <p class="text-gray-400 text-sm">Auto logout after inactivity</p>
-                                    </div>
-                                    <select class="bg-gray-700 text-white px-3 py-2 rounded-lg">
-                                        <option value="30">30 minutes</option>
-                                        <option value="60">1 hour</option>
-                                        <option value="120">2 hours</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Save Settings Button -->
-                    <div class="mt-6">
-                        <button @click="saveSettings" class="bg-primary hover:bg-primary-dark text-white px-6 py-3 rounded-lg font-medium">
-                            Save Settings
-                        </button>
-                    </div>
-                </div>
+               
 
             </main>
         </div>
@@ -700,6 +680,16 @@
                         </div>
                     </div>
 
+                    <!-- Language Selection -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Language *</label>
+                        <select v-model="postForm.language" required
+                            class="w-full bg-gray-700 text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
+                            <option value="english">English</option>
+                            <option value="tamil">Tamil</option>
+                        </select>
+                    </div>
+
                     <!-- Form Actions -->
                     <div class="flex justify-end space-x-4 pt-6 border-t border-gray-600">
                         <button type="button" @click="showPostModal = false" 
@@ -717,9 +707,241 @@
             </div>
         </div>
 
+        <!-- Post Details Modal -->
+        <div v-if="showPostDetailsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" @click="showPostDetailsModal = false">
+            <div class="bg-gray-800 rounded-xl p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto" @click.stop>
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold text-white" v-if="postDetails">
+                        {{ postDetails.title }}
+                    </h3>
+                    <button @click="showPostDetailsModal = false" class="text-gray-400 hover:text-white">
+                        <i data-feather="x" class="w-6 h-6"></i>
+                    </button>
+                </div>
+
+                <div v-if="postDetails" class="space-y-4">
+                    <!-- Post Image -->
+                    <div class="aspect-w-16 aspect-h-9 rounded-xl overflow-hidden">
+                        <img :src="'../api/uploads/' + postDetails.image" alt="" class="object-cover w-full h-full" v-if="postDetails.image">
+                    </div>
+
+                    <!-- Post Content -->
+                    <div class="text-gray-300" v-html="postDetails.content"></div>
+
+                    <!-- Meta Info -->
+                    <div class="flex flex-col sm:flex-row sm:justify-between text-sm text-gray-400">
+                        <div>
+                            <span class="font-medium text-white">Category:</span> {{ postDetails.subcategory_name }}
+                        </div>
+                        <div>
+                            <span class="font-medium text-white">Status:</span> <span :class="getStatusClass(postDetails.status)">{{ postDetails.status }}</span>
+                        </div>
+                        <div>
+                            <span class="font-medium text-white">Published on:</span> {{ new Date(postDetails.created_at).toLocaleDateString() }}
+                        </div>
+                        <div>
+                            <span class="font-medium text-white">Language:</span> {{ postDetails.language }}
+                        </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="flex flex-col sm:flex-row gap-4 mt-4">
+                        <button @click="editPost(postDetails)" class="bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-lg flex items-center justify-center">
+                            <i data-feather="edit" class="w-4 h-4 mr-2"></i>
+                            Edit Article
+                        </button>
+                        <button @click="deletePost(postDetails.id)" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg flex items-center justify-center">
+                            <i data-feather="trash" class="w-4 h-4 mr-2"></i>
+                            Delete Article
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Edit User Modal -->
+        <div v-if="showUserModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" @click="showUserModal = false">
+            <div class="bg-gray-800 rounded-xl p-6 w-full max-w-xl max-h-[90vh] overflow-y-auto" @click.stop>
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-bold text-white">Edit User</h3>
+                    <button @click="showUserModal = false" class="text-gray-400 hover:text-white">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+                <form @submit.prevent="saveUser" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Name</label>
+                        <input v-model="editingUser.name" type="text" class="w-full bg-gray-700 text-white px-4 py-2 rounded-lg" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Mobile</label>
+                        <input v-model="editingUser.mobile" type="text" class="w-full bg-gray-700 text-white px-4 py-2 rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Email</label>
+                        <input v-model="editingUser.email" type="email" class="w-full bg-gray-700 text-white px-4 py-2 rounded-lg" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Language</label>
+                        <select v-model="editingUser.language" class="w-full bg-gray-700 text-white px-4 py-2 rounded-lg">
+                            <option value="english">English</option>
+                            <option value="tamil">Tamil</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Bio</label>
+                        <textarea v-model="editingUser.bio" class="w-full bg-gray-700 text-white px-4 py-2 rounded-lg"></textarea>
+                    </div>
+                    <div class="flex justify-end space-x-4 pt-4">
+                        <button type="button" @click="showUserModal = false" class="px-6 py-2 text-gray-400 hover:text-white">Cancel</button>
+                        <button type="submit" class="bg-primary hover:bg-primary-dark text-white px-6 py-2 rounded-lg">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
         <script>
-            const { createApp, ref, onMounted, computed } = Vue;            createApp({
+            const { createApp, ref, onMounted, computed, watch } = Vue;            createApp({
                 setup() {
+                    // Fetch analytics stats (most viewed, most liked, top author)
+                    const fetchAnalytics = async () => {
+                        try {
+                            const response = await fetch('./backend/get_analytics.php', {
+                                method: 'GET',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Accept': 'application/json'
+                                }
+                            });
+                            const result = await response.json();
+                            if (result.success && result.data) {
+                                analytics.value = result.data;
+                            } else {
+                                analytics.value = {};
+                                console.error(result.error || 'Failed to fetch analytics');
+                            }
+                        } catch (error) {
+                            analytics.value = {};
+                            console.error('Error fetching analytics:', error);
+                        }
+                    };
+                    // Save (add/update) category and subcategories
+                    const saveCategory = async () => {
+                        if (!editingCategory.value.name) {
+                            alert('Category name is required');
+                            return;
+                        }
+                        // Prepare data
+                        const payload = {
+                            id: editingCategory.value.id || null,
+                            name: editingCategory.value.name,
+                            subcategories: editingCategory.value.subcategories.filter(s => s.name && s.name.trim() !== '')
+                        };
+                        try {
+                            const response = await fetch('./backend/save_category.php', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(payload)
+                            });
+                            const result = await response.json();
+                            if (result.success) {
+                                alert(editingCategory.value.id ? 'Category updated!' : 'Category added!');
+                                showCategoryModal.value = false;
+                                fetchCategories();
+                            } else {
+                                alert(result.error || 'Failed to save category');
+                            }
+                        } catch (error) {
+                            alert('Error saving category. Please try again.');
+                        }
+                    };
+                    // Edit category
+                    const editCategory = (category) => {
+                        editingCategory.value = { ...category };
+                        showCategoryModal.value = true;
+                    };
+
+                    // Delete category
+                    const deleteCategory = async (categoryId) => {
+                        if (!confirm('Are you sure you want to delete this category?')) return;
+                        try {
+                            const response = await fetch('./backend/delete_category.php', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({ id: categoryId })
+                            });
+                            const result = await response.json();
+                            if (result.success) {
+                                categories.value = categories.value.filter(c => c.id !== categoryId);
+                                alert('Category deleted successfully!');
+                            } else {
+                                alert(result.error || 'Failed to delete category.');
+                            }
+                        } catch (error) {
+                            alert('Error deleting category. Please try again.');
+                        }
+                    };
+
+                    // Save settings
+                    const saveSettings = async () => {
+                        // Implement settings save logic here
+                        alert('Settings saved!');
+                    };
+                    // Toggle user status (active/inactive)
+                    const toggleUserStatus = async (user) => {
+                        if (!user || !user.id) return;
+                        const newStatus = user.status === 'active' ? 'inactive' : 'active';
+                        try {
+                            const formData = new FormData();
+                            formData.append('id', user.id);
+                            formData.append('status', newStatus);
+                            const response = await fetch('./backend/users/update_user.php', {
+                                method: 'POST',
+                                body: formData
+                            });
+                            const result = await response.json();
+                            if (result.success) {
+                                user.status = newStatus;
+                                fetchUsers();
+                            } else {
+                                alert(result.error || 'Failed to update user status');
+                            }
+                        } catch (error) {
+                            alert('Error updating user status. Please try again.');
+                        }
+                    };
+                    const isLoadingCategories = ref(false);
+                    const categoriesError = ref(null);
+                    // Fetch posts from backend
+                    const fetchPosts = async () => {
+                        try {
+                            const response = await fetch('./backend/get_posts.php', {
+                                method: 'GET',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Accept': 'application/json'
+                                }
+                            });
+                            const result = await response.json();
+                            if (result.success && result.data) {
+                                posts.value = result.data;
+                            } else {
+                                posts.value = [];
+                                console.error(result.error || 'Failed to fetch posts');
+                            }
+                        } catch (error) {
+                            posts.value = [];
+                            console.error('Error fetching posts:', error);
+                        }
+                    };
+                    const recentPosts = ref([]);
+                    const recentActivities = ref([]);
+                    const analytics = ref({});
+                    const settings = ref({});
+                    const categories = ref([]);
+                    const posts = ref([]);
                     const sidebarOpen = ref(false);
                     const currentPage = ref('dashboard');
                     const searchQuery = ref('');
@@ -734,19 +956,23 @@
                     const editingUser = ref(null);
                     const editingCategory = ref(null);
                     
+                    // Post details modal state
+                    const showPostDetailsModal = ref(false);
+                    const postDetails = ref(null);
+                    
                     // Post form state
                     const isSubmittingPost = ref(false);
                     const selectedCategorySubcategories = ref([]);
                     const postForm = ref({
                         title: '',
-                      
                         content: '',
                         category_id: '',
                         subcategory_id: '',
                         status: 'draft',
                         scheduled_at: '',
                         image: null,
-                        imageName: ''
+                        imageName: '',
+                        language: 'english' // default
                     });
                     
                     // Reset post form
@@ -760,9 +986,16 @@
                             status: 'draft',
                             scheduled_at: '',
                             image: null,
-                            imageName: ''
+                            imageName: '',
+                            language: 'english'
                         };
                         selectedCategorySubcategories.value = [];
+                    };
+                    
+                    // Open post details modal
+                    const openPostDetails = (post) => {
+                        postDetails.value = { ...post };
+                        showPostDetailsModal.value = true;
                     };
                     
                     // Handle category change to load subcategories
@@ -800,6 +1033,7 @@
                             formData.append('subcategory_id', postForm.value.subcategory_id || '');
                             formData.append('status', postForm.value.status);
                             formData.append('scheduled_at', postForm.value.scheduled_at);
+                            formData.append('language', postForm.value.language);
                             
                             if (postForm.value.image) {
                                 formData.append('image', postForm.value.image);
@@ -1081,10 +1315,12 @@
                         if (isMobile.value) {
                             sidebarOpen.value = false;
                         }
-                        
-                        // Load categories when categories page is accessed
                         if (page === 'categories') {
                             fetchCategories();
+                        }
+                        // Load analytics when analytics page is accessed
+                        if (page === 'analytics') {
+                            fetchAnalytics();
                         }
                     };
                     
@@ -1143,6 +1379,11 @@
                         return classes[role] || 'px-2 py-1 text-xs font-medium bg-gray-500 bg-opacity-10 text-gray-400 rounded-full';
                     };
                     
+                    const getCategoryName = (categoryId) => {
+                        const cat = categories.value.find(c => c.id == categoryId);
+                        return cat ? cat.name : 'Unknown';
+                    };
+                    
                     // CRUD methods
                     const viewPost = (post) => {
                         alert(`Viewing post: ${post.title}`);
@@ -1159,7 +1400,8 @@
                             status: post.status || 'draft',
                             scheduled_at: post.scheduled_at || '',
                             image: null,
-                            imageName: post.image ? 'Current image' : ''
+                            imageName: post.image ? 'Current image' : '',
+                            language: post.language || 'english',
                         };
                         
                         // Load subcategories for the selected category
@@ -1174,9 +1416,55 @@
                         showPostModal.value = true;
                     };
                     
-                    const deletePost = (postId) => {
-                        if (confirm('Are you sure you want to delete this post?')) {
-                            posts.value = posts.value.filter(p => p.id !== postId);
+                    const deletePost = async (postId) => {
+                        if (!confirm('Are you sure you want to delete this post?')) return;
+                        try {
+                            const response = await fetch('./backend/delete_post.php', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({ id: postId })
+                            });
+                            const result = await response.json();
+                            if (result.success) {
+                                posts.value = posts.value.filter(p => p.id !== postId);
+                                alert('Post deleted successfully!');
+                            } else {
+                                alert(result.error || 'Failed to delete post.');
+                            }
+                        } catch (error) {
+                            alert('Error deleting post. Please try again.');
+                        }
+                    };
+                    
+                    // Users API integration
+                    const users = ref([]);
+                    const isLoadingUsers = ref(false);
+                    const usersError = ref(null);
+                    
+                    const fetchUsers = async () => {
+                        isLoadingUsers.value = true;
+                        usersError.value = null;
+                        try {
+                            const response = await fetch('./backend/users/get_users.php', {
+                                method: 'GET',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Accept': 'application/json'
+                                }
+                            });
+                            const result = await response.json();
+                            if (result.success && result.data) {
+                                users.value = result.data;
+                            } else {
+                                throw new Error(result.error || 'Failed to fetch users');
+                            }
+                        } catch (error) {
+                            usersError.value = error.message;
+                            users.value = [];
+                        } finally {
+                            isLoadingUsers.value = false;
                         }
                     };
                     
@@ -1185,26 +1473,50 @@
                         showUserModal.value = true;
                     };
                     
-                    const toggleUserStatus = (user) => {
-                        const userIndex = users.value.findIndex(u => u.id === user.id);
-                        if (userIndex !== -1) {
-                            users.value[userIndex].status = users.value[userIndex].status === 'active' ? 'inactive' : 'active';
+                    const saveUser = async () => {
+                        if (!editingUser.value) return;
+                        try {
+                            const formData = new FormData();
+                            Object.keys(editingUser.value).forEach(key => {
+                                formData.append(key, editingUser.value[key]);
+                            });
+                            const response = await fetch('./backend/users/update_user.php', {
+                                method: 'POST',
+                                body: formData
+                            });
+                            const result = await response.json();
+                            if (result.success) {
+                                alert('User updated successfully!');
+                                showUserModal.value = false;
+                                fetchUsers();
+                            } else {
+                                alert(result.error || 'Failed to update user');
+                            }
+                        } catch (error) {
+                            alert('Error updating user. Please try again.');
                         }
                     };
                     
-                    const editCategory = (category) => {
-                        editingCategory.value = { ...category };
-                        showCategoryModal.value = true;
-                    };
-                    
-                    const deleteCategory = (categoryId) => {
-                        if (confirm('Are you sure you want to delete this category?')) {
-                            categories.value = categories.value.filter(c => c.id !== categoryId);
+                    const deleteUser = async (userId) => {
+                        if (!confirm('Are you sure you want to delete this user?')) return;
+                        try {
+                            const response = await fetch('./backend/users/delete_user.php', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({ id: userId })
+                            });
+                            const result = await response.json();
+                            if (result.success) {
+                                alert('User deleted successfully!');
+                                fetchUsers();
+                            } else {
+                                alert(result.error || 'Failed to delete user');
+                            }
+                        } catch (error) {
+                            alert('Error deleting user. Please try again.');
                         }
-                    };
-                    
-                    const saveSettings = () => {
-                        alert('Settings saved successfully!');
                     };
                     
                     const pageTitles = {
@@ -1216,161 +1528,223 @@
                         settings: 'FIM News Settings'
                     };
                     
-                    // Sample data
-                    const posts = ref([
-                        { id: 1, title: 'Breaking: Technology Market Shows Strong Growth in 2024', author: 'Rajesh Kumar', date: 'Oct 10, 2025', status: 'Published', views: 4567, likes: 234, category: 'Technology', image: 'https://via.placeholder.com/150x150?text=Tech+News' },
-                        { id: 2, title: 'Local Business Innovation Awards Winners Announced', author: 'Priya Sharma', date: 'Oct 09, 2025', status: 'Published', views: 3245, likes: 189, category: 'Business', image: 'https://via.placeholder.com/150x150?text=Business' },
-                        { id: 3, title: 'Sports Update: Cricket Tournament Finals This Weekend', author: 'Amit Singh', date: 'Oct 08, 2025', status: 'Published', views: 5432, likes: 367, category: 'Sports', image: 'https://via.placeholder.com/150x150?text=Sports' },
-                        { id: 4, title: 'Health Ministry Issues New Guidelines for Winter Season', author: 'Dr. Sunita Patel', date: 'Oct 07, 2025', status: 'Draft', views: 0, likes: 0, category: 'Health', image: 'https://via.placeholder.com/150x150?text=Health' },
-                        { id: 5, title: 'Education Sector Embraces Digital Learning Methods', author: 'Vikram Mehta', date: 'Oct 06, 2025', status: 'Published', views: 2876, likes: 145, category: 'Education', image: 'https://via.placeholder.com/150x150?text=Education' },
-                        { id: 6, title: 'Entertainment Industry Gears Up for Festival Season', author: 'Kavya Reddy', date: 'Oct 05, 2025', status: 'Scheduled', views: 0, likes: 0, category: 'Entertainment', image: 'https://via.placeholder.com/150x150?text=Entertainment' }
-                    ]);
-                    
-                    const users = ref([
-                        { id: 1, name: 'Rajesh Kumar', email: 'rajesh@fimnews.com', role: 'admin', status: 'active', joinedDate: 'Jan 15, 2024', postsCount: 47 },
-                        { id: 2, name: 'Priya Sharma', email: 'priya@fimnews.com', role: 'editor', status: 'active', joinedDate: 'Mar 20, 2024', postsCount: 32 },
-                        { id: 3, name: 'Amit Singh', email: 'amit@fimnews.com', role: 'editor', status: 'active', joinedDate: 'May 10, 2024', postsCount: 28 },
-                        { id: 4, name: 'Dr. Sunita Patel', email: 'sunita@fimnews.com', role: 'contributor', status: 'active', joinedDate: 'Jul 05, 2024', postsCount: 15 },
-                        { id: 5, name: 'Vikram Mehta', email: 'vikram@fimnews.com', role: 'contributor', status: 'active', joinedDate: 'Aug 12, 2024', postsCount: 22 },
-                        { id: 6, name: 'Kavya Reddy', email: 'kavya@fimnews.com', role: 'editor', status: 'active', joinedDate: 'Sep 01, 2024', postsCount: 18 }
-                    ]);
-                    
-                    const categories = ref([]);
-                    const isLoadingCategories = ref(false);
-                    const categoriesError = ref(null);
-                    
-                    const analytics = ref({
-                        mostViewed: { title: 'Breaking: Technology Market Shows Strong Growth in 2024', views: 4567 },
-                        mostLiked: { title: 'Sports Update: Cricket Tournament Finals This Weekend', likes: 367 },
-                        topAuthor: { name: 'Rajesh Kumar', posts: 47 }
-                    });
-                    
-                    const settings = ref({
-                        siteName: 'FIM News',
-                        siteDescription: 'First In Market - Your trusted source for breaking news, business updates, technology trends, and comprehensive coverage across India',
-                        contactEmail: 'admin@fimnews.com'
-                    });
-                    
-                    const recentPosts = ref(posts.value.slice(0, 5));
-                    
-                    const recentActivities = ref([
-                        { id: 1, action: 'Rajesh Kumar published "Breaking: Technology Market Shows Strong Growth"', time: '1 hour ago', icon: 'edit-2', color: 'blue' },
-                        { id: 2, action: 'New subscriber from Mumbai registered', time: '2 hours ago', icon: 'user-plus', color: 'green' },
-                        { id: 3, action: 'Priya Sharma updated Business news category', time: '3 hours ago', icon: 'folder', color: 'purple' },
-                        { id: 4, action: 'Cricket news article got 500+ views in 30 minutes', time: '4 hours ago', icon: 'trending-up', color: 'yellow' },
-                        { id: 5, action: 'Amit Singh scheduled sports tournament coverage', time: '5 hours ago', icon: 'calendar', color: 'blue' },
-                        { id: 6, action: 'Daily newsletter sent to 15,000+ subscribers', time: '6 hours ago', icon: 'mail', color: 'green' }
-                    ]);
-                    
                     onMounted(() => {
                         feather.replace();
-                        
-                        // Fetch dashboard statistics
                         fetchStats();
-                        
-                        // Add event listener for window resize
+                        fetchPosts();
+                        fetchUsers();
+                        fetchCategories();
+                        fetchAnalytics();
                         window.addEventListener('resize', handleResize);
-                        
-                        // Re-replace icons after any DOM changes if needed
                         setTimeout(() => feather.replace(), 100);
-                        
-                        // Initialize charts after DOM is ready
                         setTimeout(() => {
-                            // Initialize charts
-                            const viewsCtx = document.getElementById('viewsChart')?.getContext('2d');
+                            // Chart.js initialization
+                            const viewsCtx = document.getElementById('viewsChart');
                             if (viewsCtx) {
+                                if (viewsChart) viewsChart.destroy();
                                 viewsChart = new Chart(viewsCtx, {
                                     type: 'line',
-                                    data: {
-                                        labels: [],
-                                        datasets: []
-                                    },
+                                    data: viewsAnalytics.value.chart_data,
                                     options: {
                                         responsive: true,
-                                        maintainAspectRatio: false,
                                         plugins: {
-                                            legend: {
-                                                display: false
-                                            },
-                                            tooltip: {
-                                                backgroundColor: 'rgba(17, 24, 39, 0.8)',
-                                                titleColor: 'rgba(255, 255, 255, 0.9)',
-                                                bodyColor: 'rgba(255, 255, 255, 0.9)',
-                                                borderColor: 'rgba(59, 130, 246, 0.5)',
-                                                borderWidth: 1,
-                                                callbacks: {
-                                                    label: function(context) {
-                                                        return `Views: ${formatNumber(context.parsed.y)}`;
-                                                    }
-                                                }
-                                            }
+                                            legend: { display: true },
+                                            title: { display: false }
                                         },
                                         scales: {
-                                            y: {
-                                                beginAtZero: true,
-                                                grid: {
-                                                    color: 'rgba(255, 255, 255, 0.05)'
-                                                },
-                                                ticks: {
-                                                    color: 'rgba(255, 255, 255, 0.6)',
-                                                    callback: function(value) {
-                                                        return formatNumber(value);
-                                                    }
-                                                }
-                                            },
-                                            x: {
-                                                grid: {
-                                                    display: false
-                                                },
-                                                ticks: {
-                                                    color: 'rgba(255, 255, 255, 0.6)'
-                                                }
-                                            }
+                                            y: { beginAtZero: true }
                                         }
                                     }
                                 });
-                                
-                                // Fetch views analytics data
-                                fetchViewsAnalytics('monthly');
                             }
-                            
-                            const categoriesCtx = document.getElementById('categoriesChart')?.getContext('2d');
+
+                            // Categories Chart
+                            const categoriesCtx = document.getElementById('categoriesChart');
                             if (categoriesCtx) {
-                                new Chart(categoriesCtx, {
-                                    type: 'doughnut',
+                                if (window.categoriesChart) window.categoriesChart.destroy();
+                                window.categoriesChart = new Chart(categoriesCtx, {
+                                    type: 'bar',
                                     data: {
-                                        labels: ['Technology', 'Business', 'Design', 'Marketing', 'Other'],
+                                        labels: categories.value.map(c => c.name),
                                         datasets: [{
-                                            data: [35, 25, 20, 15, 5],
-                                            backgroundColor: [
-                                                '#0ea5e9',
-                                                '#3b82f6',
-                                                '#8b5cf6',
-                                                '#10b981',
-                                                '#f59e0b'
-                                            ],
-                                            borderWidth: 0
+                                            label: 'Posts',
+                                            data: categories.value.map(c => (c.posts_count || 0)),
+                                            backgroundColor: '#6366f1',
                                         }]
                                     },
                                     options: {
                                         responsive: true,
-                                        maintainAspectRatio: false,
-                                        cutout: '70%',
                                         plugins: {
-                                            legend: {
-                                                position: 'right',
-                                                labels: {
-                                                    color: 'rgba(255, 255, 255, 0.7)'
-                                                }
-                                            }
+                                            legend: { display: false },
+                                            title: { display: false }
+                                        },
+                                        scales: {
+                                            y: { beginAtZero: true }
+                                        }
+                                    }
+                                });
+                            }
+
+                            // Posts Per Month Chart
+                            const postsCtx = document.getElementById('postsChart');
+                            if (postsCtx) {
+                                if (window.postsChart) window.postsChart.destroy();
+                                window.postsChart = new Chart(postsCtx, {
+                                    type: 'bar',
+                                    data: {
+                                        labels: analytics.value && analytics.value.postsPerMonth && analytics.value.postsPerMonth.labels ? analytics.value.postsPerMonth.labels : [],
+                                        datasets: [{
+                                            label: 'Posts',
+                                            data: analytics.value && analytics.value.postsPerMonth && analytics.value.postsPerMonth.data ? analytics.value.postsPerMonth.data : [],
+                                            backgroundColor: '#0ea5e9',
+                                        }]
+                                    },
+                                    options: {
+                                        responsive: true,
+                                        plugins: {
+                                            legend: { display: false },
+                                            title: { display: false }
+                                        },
+                                        scales: {
+                                            y: { beginAtZero: true }
+                                        }
+                                    }
+                                });
+                            }
+
+                            // Engagement Chart
+                            const engagementCtx = document.getElementById('engagementChart');
+                            if (engagementCtx) {
+                                if (window.engagementChart) window.engagementChart.destroy();
+                                window.engagementChart = new Chart(engagementCtx, {
+                                    type: 'line',
+                                    data: {
+                                        labels: analytics.value && analytics.value.engagement && analytics.value.engagement.labels ? analytics.value.engagement.labels : [],
+                                        datasets: analytics.value && analytics.value.engagement && analytics.value.engagement.datasets ? analytics.value.engagement.datasets : []
+                                    },
+                                    options: {
+                                        responsive: true,
+                                        plugins: {
+                                            legend: { display: true },
+                                            title: { display: false }
+                                        },
+                                        scales: {
+                                            y: { beginAtZero: true }
+                                        }
+                                    }
+                                });
+                            }
+                        }, 500);
+
+                        // Watch analytics and update charts when data changes
+                        watch(analytics, (newVal) => {
+                            // Posts Per Month Chart
+                            const postsCtx = document.getElementById('postsChart');
+                            if (postsCtx) {
+                                if (window.postsChart) window.postsChart.destroy();
+                                window.postsChart = new Chart(postsCtx, {
+                                    type: 'bar',
+                                    data: {
+                                        labels: newVal && newVal.postsPerMonth && newVal.postsPerMonth.labels ? newVal.postsPerMonth.labels : [],
+                                        datasets: [{
+                                            label: 'Posts',
+                                            data: newVal && newVal.postsPerMonth && newVal.postsPerMonth.data ? newVal.postsPerMonth.data : [],
+                                            backgroundColor: '#0ea5e9',
+                                        }]
+                                    },
+                                    options: {
+                                        responsive: true,
+                                        plugins: {
+                                            legend: { display: false },
+                                            title: { display: false }
+                                        },
+                                        scales: {
+                                            y: { beginAtZero: true }
+                                        }
+                                    }
+                                });
+                            }
+                            // Engagement Chart
+                            const engagementCtx = document.getElementById('engagementChart');
+                            if (engagementCtx) {
+                                if (window.engagementChart) window.engagementChart.destroy();
+                                window.engagementChart = new Chart(engagementCtx, {
+                                    type: 'line',
+                                    data: {
+                                        labels: newVal && newVal.engagement && newVal.engagement.labels ? newVal.engagement.labels : [],
+                                        datasets: newVal && newVal.engagement && newVal.engagement.datasets ? newVal.engagement.datasets : []
+                                    },
+                                    options: {
+                                        responsive: true,
+                                        plugins: {
+                                            legend: { display: true },
+                                            title: { display: false }
+                                        },
+                                        scales: {
+                                            y: { beginAtZero: true }
                                         }
                                     }
                                 });
                             }
                         }, 500);
                     });
+
+                    // Watch analytics and update charts when data changes
+                    watch(analytics, (newVal) => {
+                        // Posts Per Month Chart
+                        const postsCtx = document.getElementById('postsChart');
+                        if (postsCtx) {
+                            if (window.postsChart) window.postsChart.destroy();
+                            window.postsChart = new Chart(postsCtx, {
+                                type: 'bar',
+                                data: {
+                                    labels: newVal && newVal.postsPerMonth && newVal.postsPerMonth.labels ? newVal.postsPerMonth.labels : [],
+                                    datasets: [{
+                                        label: 'Posts',
+                                        data: newVal && newVal.postsPerMonth && newVal.postsPerMonth.data ? newVal.postsPerMonth.data : [],
+                                        backgroundColor: '#0ea5e9',
+                                    }]
+                                },
+                                options: {
+                                    responsive: true,
+                                    plugins: {
+                                        legend: { display: false },
+                                        title: { display: false }
+                                    },
+                                    scales: {
+                                        y: { beginAtZero: true }
+                                    }
+                                }
+                            });
+                        }
+                        // Engagement Chart
+                        const engagementCtx = document.getElementById('engagementChart');
+                        if (engagementCtx) {
+                            if (window.engagementChart) window.engagementChart.destroy();
+                            window.engagementChart = new Chart(engagementCtx, {
+                                type: 'line',
+                                data: {
+                                    labels: newVal && newVal.engagement && newVal.engagement.labels ? newVal.engagement.labels : [],
+                                    datasets: newVal && newVal.engagement && newVal.engagement.datasets ? newVal.engagement.datasets : []
+                                },
+                                options: {
+                                    responsive: true,
+                                    plugins: {
+                                        legend: { display: true },
+                                        title: { display: false }
+                                    },
+                                    scales: {
+                                        y: { beginAtZero: true }
+                                    }
+                                }
+                            });
+                        }
+                    }, { deep: true });
                     
                     return {
+                        fetchAnalytics,
+                        saveCategory,
+                        fetchPosts,
                         sidebarOpen,
                         currentPage,
                         searchQuery,
@@ -1396,6 +1770,8 @@
                         isLoadingViews,
                         isLoadingCategories,
                         categoriesError,
+                        isLoadingUsers,
+                        usersError,
                         
                         // Analytics Data
                         viewsAnalytics,
@@ -1414,6 +1790,11 @@
                         editingPost,
                         editingUser,
                         editingCategory,
+                        showPostDetailsModal,
+                        
+                        // Post Details
+                        postDetails,
+                        openPostDetails,
                         
                         // Post Form
                         postForm,
@@ -1439,10 +1820,13 @@
                         editPost,
                         deletePost,
                         editUser,
+                        saveUser,
+                        deleteUser,
                         toggleUserStatus,
                         editCategory,
                         deleteCategory,
-                        saveSettings
+                        saveSettings,
+                        getCategoryName
                     };
                 }
             }).mount('#app');

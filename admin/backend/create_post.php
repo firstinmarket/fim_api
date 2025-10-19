@@ -21,6 +21,7 @@ try {
     $subcategory_id = !empty($_POST['subcategory_id']) ? (int)$_POST['subcategory_id'] : null;
     $status = $_POST['status'] ?? 'draft';
     $scheduled_at = $_POST['scheduled_at'] ?? null;
+    $language = $_POST['language'] ?? 'english';
 
     if (empty($title)) {
         throw new Exception('Title is required');
@@ -75,8 +76,8 @@ try {
     
     $stmt = $pdo->prepare("
         INSERT INTO posts 
-        (title, content, image, category_id, status, scheduled_time, likes_count, shares_count, saves_count, views_count, created_at, updated_at) 
-        VALUES (?, ?, ?, ?, ?, ?, 0, 0, 0, 0, NOW(), NOW())
+        (title, content, image, category_id, status, scheduled_time, language, likes_count, shares_count, saves_count, views_count, created_at, updated_at) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, 0, 0, 0, 0, NOW(), NOW())
     ");
 
     $stmt->execute([
@@ -85,7 +86,8 @@ try {
         $imagePath,
         $subcategory_id,
         $status,
-        $scheduled_at
+        $scheduled_at,
+        $language
     ]);
 
     $postId = $pdo->lastInsertId();
@@ -102,7 +104,8 @@ try {
            
             'subcategory_id' => $subcategory_id,
             'status' => $status,
-            'scheduled_at' => $scheduled_at
+            'scheduled_at' => $scheduled_at,
+            'language' => $language
         ]
     ]);
 
