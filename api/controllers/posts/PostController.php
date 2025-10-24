@@ -90,29 +90,48 @@ class PostController {
         $pdo = getDB();
         
         try {
-            // If user_id is provided, filter by user's language preference
             if ($user_id) {
-                // Get the user's language preference
                 $userStmt = $pdo->prepare('SELECT language FROM users WHERE id = ?');
                 $userStmt->execute([$user_id]);
                 $userData = $userStmt->fetch();
                 $userLanguage = $userData ? ($userData['language'] ?? 'english') : 'english';
                 
                 $stmt = $pdo->prepare('
-                    SELECT p.*, ? AS user_language
+                    SELECT p.*,
+                           GROUP_CONCAT(DISTINCT c.name ORDER BY c.name SEPARATOR ", ") AS category_names,
+                           GROUP_CONCAT(DISTINCT c.id ORDER BY c.id) AS category_ids,
+                           ? AS user_language
                     FROM posts p 
+                    LEFT JOIN post_categories pc ON pc.post_id = p.id
+                    LEFT JOIN categories c ON pc.category_id = c.id
                     WHERE p.language = ?
+                        AND p.status = "published"
+                    GROUP BY p.id
                     ORDER BY p.created_at DESC
                 ');
                 $stmt->execute([$userLanguage, $userLanguage]);
                 
-                error_log("PostController: Fetching all posts for user $user_id with language preference: $userLanguage");
+                error_log("PostController: Fetching all PUBLISHED posts for user $user_id with language: $userLanguage");
             } else {
-                // No user specified, return all posts
-                $stmt = $pdo->query('SELECT * FROM posts ORDER BY created_at DESC');
+                $stmt = $pdo->prepare('
+                    SELECT p.*,
+                           GROUP_CONCAT(DISTINCT c.name ORDER BY c.name SEPARATOR ", ") AS category_names,
+                           GROUP_CONCAT(DISTINCT c.id ORDER BY c.id) AS category_ids
+                    FROM posts p
+                    LEFT JOIN post_categories pc ON pc.post_id = p.id
+                    LEFT JOIN categories c ON pc.category_id = c.id
+                    WHERE p.status = "published"
+                    GROUP BY p.id
+                    ORDER BY p.created_at DESC
+                ');
+                $stmt->execute();
+                
+                error_log("PostController: Fetching all PUBLISHED posts (no user filter)");
             }
             
             $posts = $stmt->fetchAll();
+            error_log("PostController: Found " . count($posts) . " published posts");
+            
             return ['status' => 200, 'body' => $posts];
             
         } catch (PDOException $e) {
@@ -128,33 +147,35 @@ class PostController {
         $pdo = getDB();
         
         try {
-            // First, get the user's language preference
             $userStmt = $pdo->prepare('SELECT language FROM users WHERE id = ?');
             $userStmt->execute([$user_id]);
             $userData = $userStmt->fetch();
             $userLanguage = $userData ? ($userData['language'] ?? 'english') : 'english';
             
-            // Build the query with strict language filtering
-            $stmt = $pdo->prepare('
-                SELECT p.*, s.name AS category_name,
+          $stmt = $pdo->prepare('
+                SELECT DISTINCT p.*,
+                       GROUP_CONCAT(DISTINCT c.name ORDER BY c.name SEPARATOR ", ") AS category_names,
+                       GROUP_CONCAT(DISTINCT c.id ORDER BY c.id) AS category_ids,
                        CASE WHEN pl.id IS NOT NULL THEN 1 ELSE 0 END AS is_liked,
                        CASE WHEN sc.id IS NOT NULL THEN 1 ELSE 0 END AS is_saved,
                        ? AS user_language
                 FROM posts p
-                JOIN user_categories uc ON uc.subcategory_id = p.category_id
-                JOIN subcategories s ON p.category_id = s.id
+                INNER JOIN post_categories pc ON pc.post_id = p.id
+                INNER JOIN categories c ON pc.category_id = c.id
+                INNER JOIN user_categories uc ON uc.category_id = pc.category_id
                 LEFT JOIN post_likes pl ON pl.post_id = p.id AND pl.user_id = ?
                 LEFT JOIN saved_counts sc ON sc.post_id = p.id AND sc.user_id = ?
                 WHERE uc.user_id = ? 
                     AND p.language = ?
+                    AND p.status = "published"
+                GROUP BY p.id
                 ORDER BY p.created_at DESC
             ');
             $stmt->execute([$userLanguage, $user_id, $user_id, $user_id, $userLanguage]);
             $posts = $stmt->fetchAll();
             
-          
-            error_log("PostController: Fetching posts for user $user_id with language preference: $userLanguage");
-            error_log("PostController: Found " . count($posts) . " posts matching language filter");
+            error_log("PostController: Fetching PUBLISHED posts for user $user_id with language: $userLanguage");
+            error_log("PostController: Found " . count($posts) . " published posts matching user categories and language");
             
             return ['status' => 200, 'body' => $posts];
             
@@ -178,24 +199,30 @@ class PostController {
             $userLanguage = $userData ? ($userData['language'] ?? 'english') : 'english';
             
             $stmt = $pdo->prepare('
-                SELECT p.*, s.name AS category_name, sc.saved_at,
+                SELECT p.*, 
+                       GROUP_CONCAT(DISTINCT c.name ORDER BY c.name SEPARATOR ", ") AS category_names,
+                       GROUP_CONCAT(DISTINCT c.id ORDER BY c.id) AS category_ids,
+                       sc.saved_at,
                        CASE WHEN pl.id IS NOT NULL THEN 1 ELSE 0 END AS is_liked,
                        1 AS is_saved,
                        ? AS user_language
                 FROM saved_counts sc
                 JOIN posts p ON sc.post_id = p.id
-                JOIN subcategories s ON p.category_id = s.id
+                LEFT JOIN post_categories pc ON pc.post_id = p.id
+                LEFT JOIN categories c ON pc.category_id = c.id
                 LEFT JOIN post_likes pl ON pl.post_id = p.id AND pl.user_id = ?
                 WHERE sc.user_id = ?
                     AND p.language = ?
+                    AND p.status = "published"
+                GROUP BY p.id, sc.saved_at
                 ORDER BY sc.saved_at DESC
             ');
             $stmt->execute([$userLanguage, $user_id, $user_id, $userLanguage]);
             $posts = $stmt->fetchAll();
             
             // Log the language filtering for debugging
-            error_log("PostController: Fetching saved posts for user $user_id with language preference: $userLanguage");
-            error_log("PostController: Found " . count($posts) . " saved posts matching language filter");
+            error_log("PostController: Fetching saved PUBLISHED posts for user $user_id with language: $userLanguage");
+            error_log("PostController: Found " . count($posts) . " saved published posts matching language filter");
             
             return ['status' => 200, 'body' => $posts];
             
