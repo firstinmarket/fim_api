@@ -16,12 +16,12 @@ class UpdateCategoriesController {
             $stmt->execute([$user_id]);
 
             // Add new categories
-            $stmt = $pdo->prepare('INSERT INTO user_categories (user_id, subcategory_id) VALUES (?, ?)');
+            $stmt = $pdo->prepare('INSERT INTO user_categories (user_id, category_id) VALUES (?, ?)');
             $inserted = 0;
             $not_found = [];
             foreach ($category_ids as $cat_id) {
                 // Check if subcategory exists
-                $check = $pdo->prepare('SELECT id FROM subcategories WHERE id = ?');
+                $check = $pdo->prepare('SELECT id FROM categories WHERE id = ?');
                 $check->execute([$cat_id]);
                 if ($check->fetch()) {
                     $stmt->execute([$user_id, $cat_id]);

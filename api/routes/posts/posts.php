@@ -4,11 +4,10 @@ require_once '../../controllers/posts/PostController.php';
 
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-    // If both post_id and user_id are provided, fetch like/save status
     if (isset($_GET['post_id']) && isset($_GET['user_id'])) {
         $post_id = $_GET['post_id'];
         $user_id = $_GET['user_id'];
-        $status_type = $_GET['status'] ?? 'save'; // 'like' or 'save'
+        $status_type = $_GET['status'] ?? 'save'; 
         
         if ($status_type === 'like') {
             $result = PostController::getLikeStatus($post_id, $user_id);

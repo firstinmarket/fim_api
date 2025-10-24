@@ -10,13 +10,13 @@ class ProfileController {
     u.`email`, 
     u.`bio`,
     u.`language`,
-    uc.`id` AS category_id,
-    uc.`subcategory_id`, 
-    sc.`name` AS subcategory_name,
+    uc.`id` AS user_category_id,
+    uc.`category_id`, 
+    c.`name` AS category_name,
     uc.`created_at`
 FROM `users` u
 LEFT JOIN `user_categories` uc ON u.`id` = uc.`user_id`
-LEFT JOIN `subcategories` sc ON uc.`subcategory_id` = sc.`id`
+LEFT JOIN `categories` c ON uc.`category_id` = c.`id`
 WHERE u.`id` = ?');
         $stmt->execute([$user_id]);
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -35,8 +35,7 @@ WHERE u.`id` = ?');
             if (!empty($row['category_id'])) {
                 $categories[] = [
                     'id' => $row['category_id'],
-                    'subcategory_id' => $row['subcategory_id'],
-                    'subcategory_name' => $row['subcategory_name'] ?? null,
+                    'category_name' => $row['category_name'] ?? null,
                     'created_at' => $row['created_at'],
                 ];
             }

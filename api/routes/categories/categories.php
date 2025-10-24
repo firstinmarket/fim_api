@@ -13,7 +13,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         http_response_code($result['status']);
         echo json_encode($result['body']);
         exit;
-    } else {
+    } elseif (isset($_GET['type']) && $_GET['type'] === 'categories') {
+          $result = CategoryController::getCategories();
+        http_response_code($result['status']);
+        echo json_encode($result['body']);
+        exit;
+    }  
+    else {
         $result = CategoryController::getCategories();
         http_response_code($result['status']);
         echo json_encode($result['body']);

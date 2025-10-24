@@ -79,6 +79,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return name.trim().substring(0, 1).toUpperCase();
   }
 
+  // Helper function to get icon for field
+  IconData _getFieldIcon(String field) {
+    switch (field) {
+      case 'name':
+        return Icons.person;
+      case 'email':
+        return Icons.email;
+      case 'phone':
+        return Icons.phone;
+      case 'bio':
+        return Icons.description;
+      case 'language':
+        return Icons.language;
+      default:
+        return Icons.edit;
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -139,7 +157,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       debugPrint('ProfileScreen: Fetching categories');
       final response = await ApiService.apiGet('categories/categories.php',
-          query: {'type': 'subcategories'});
+          query: {'type': 'categories'});
       if (response is List) {
         setState(() {
           categories = List<Map<String, dynamic>>.from(response);
@@ -160,116 +178,321 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
     showDialog(
       context: context,
+      barrierDismissible: true,
+      barrierColor: Colors.black.withOpacity(0.7),
       builder: (context) => StatefulBuilder(
         builder: (context, setModalState) => Dialog(
           backgroundColor: Colors.transparent,
-          child: Container(
-            width: MediaQuery.of(context).size.width * 0.85,
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: const Color(0xFF1E1E1E).withOpacity(0.95),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFF5F8DFF), width: 1),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    IconButton(
-                      onPressed: () => Navigator.pop(context),
-                      icon:
-                          const Icon(Icons.close, color: Colors.white, size: 22),
-                    ),
+          elevation: 0,
+          child: TweenAnimationBuilder(
+            duration: const Duration(milliseconds: 300),
+            tween: Tween<double>(begin: 0.0, end: 1.0),
+            builder: (context, double value, child) {
+              return Transform.scale(
+                scale: value,
+                child: Opacity(
+                  opacity: value,
+                  child: child,
+                ),
+              );
+            },
+            child: Container(
+              width: MediaQuery.of(context).size.width * 0.9,
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    const Color(0xFF1A1F2E),
+                    const Color(0xFF0F141E),
                   ],
                 ),
-                Text(
-                  'Edit ${editField[0].toUpperCase() + editField.substring(1)}',
-                  style: const TextStyle(
-                    color: Color(0xFF5F8DFF),
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                  ),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: const Color(0xFF5F8DFF).withOpacity(0.5),
+                  width: 2,
                 ),
-                const SizedBox(height: 16),
-                if (editField == 'language')
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF5F8DFF).withOpacity(0.3),
+                    blurRadius: 20,
+                    spreadRadius: 2,
+                    offset: const Offset(0, 8),
+                  ),
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.5),
+                    blurRadius: 30,
+                    spreadRadius: 5,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Header with icon and close button
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF5F8DFF), Color(0xFF4A73E8)],
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF5F8DFF).withOpacity(0.4),
+                              blurRadius: 8,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Icon(
+                          _getFieldIcon(field),
+                          color: Colors.white,
+                          size: 24,
+                        ),
+                      ),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF232A3B),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: const Color(0xFF5F8DFF).withOpacity(0.3),
+                            width: 1,
+                          ),
+                        ),
+                        child: IconButton(
+                          onPressed: () => Navigator.pop(context),
+                          icon: const Icon(Icons.close,
+                              color: Colors.white, size: 20),
+                          padding: const EdgeInsets.all(8),
+                          constraints: const BoxConstraints(),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  // Title
+                  Text(
+                    'Edit ${editField[0].toUpperCase() + editField.substring(1)}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    width: 60,
+                    height: 4,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF232A3B),
-                      borderRadius: BorderRadius.circular(10),
-                      border:
-                          Border.all(color: const Color(0xFF5F8DFF), width: 1),
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF5F8DFF), Color(0xFF4A73E8)],
+                      ),
+                      borderRadius: BorderRadius.circular(2),
                     ),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<String>(
-                        value: (tempValue == 'english' || tempValue == 'tamil')
-                            ? tempValue
-                            : 'english',
-                        isExpanded: true,
-                        dropdownColor: const Color(0xFF232A3B),
-                        style: const TextStyle(color: Colors.white),
-                        icon: const Icon(Icons.arrow_drop_down,
-                            color: Color(0xFF5F8DFF)),
-                        items: const [
-                          DropdownMenuItem(
-                              value: 'english', child: Text('English')),
-                          DropdownMenuItem(value: 'tamil', child: Text('Tamil')),
+                  ),
+                  const SizedBox(height: 24),
+                  // Input field or dropdown
+                  if (editField == 'language')
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF232A3B),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: const Color(0xFF5F8DFF).withOpacity(0.5),
+                          width: 2,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF5F8DFF).withOpacity(0.1),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
                         ],
-                        onChanged: (String? newValue) {
-                          if (newValue != null) {
-                            final previousValue = tempValue;
-                            setState(() {
-                              tempValue = newValue;
-                              debugPrint(
-                                  'Language changed from: $previousValue to: $newValue');
-                            });
-                            setModalState(() {}); // Rebuild modal UI
-                          }
-                        },
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value:
+                              (tempValue == 'english' || tempValue == 'tamil')
+                                  ? tempValue
+                                  : 'english',
+                          isExpanded: true,
+                          dropdownColor: const Color(0xFF232A3B),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          icon: Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF5F8DFF).withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(Icons.arrow_drop_down,
+                                color: Color(0xFF5F8DFF)),
+                          ),
+                          items: const [
+                            DropdownMenuItem(
+                              value: 'english',
+                              child: Row(
+                                children: [
+                                  Icon(Icons.language,
+                                      color: Color(0xFF5F8DFF), size: 20),
+                                  SizedBox(width: 12),
+                                  Text('English'),
+                                ],
+                              ),
+                            ),
+                            DropdownMenuItem(
+                              value: 'tamil',
+                              child: Row(
+                                children: [
+                                  Icon(Icons.language,
+                                      color: Color(0xFF5F8DFF), size: 20),
+                                  SizedBox(width: 12),
+                                  Text('Tamil'),
+                                ],
+                              ),
+                            ),
+                          ],
+                          onChanged: (String? newValue) {
+                            if (newValue != null) {
+                              final previousValue = tempValue;
+                              setState(() {
+                                tempValue = newValue;
+                                debugPrint(
+                                    'Language changed from: $previousValue to: $newValue');
+                              });
+                              setModalState(() {}); // Rebuild modal UI
+                            }
+                          },
+                        ),
+                      ),
+                    )
+                  else
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF5F8DFF).withOpacity(0.1),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: TextField(
+                        controller: TextEditingController(text: tempValue),
+                        onChanged: (value) => tempValue = value,
+                        maxLines: editField == 'bio' ? 3 : 1,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        decoration: InputDecoration(
+                          hintText: 'Enter your $editField',
+                          hintStyle: TextStyle(
+                            color: Colors.white.withOpacity(0.4),
+                            fontSize: 15,
+                          ),
+                          filled: true,
+                          fillColor: const Color(0xFF232A3B),
+                          prefixIcon: Icon(
+                            _getFieldIcon(field),
+                            color: const Color(0xFF5F8DFF),
+                            size: 22,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: const Color(0xFF5F8DFF).withOpacity(0.5),
+                              width: 2,
+                            ),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: const Color(0xFF5F8DFF).withOpacity(0.5),
+                              width: 2,
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                              color: Color(0xFF5F8DFF),
+                              width: 2,
+                            ),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 16,
+                          ),
+                        ),
                       ),
                     ),
-                  )
-                else
-                  TextField(
-                    controller: TextEditingController(text: tempValue),
-                    onChanged: (value) => tempValue = value,
-                    decoration: InputDecoration(
-                      hintText: 'Enter $editField',
-                      hintStyle: const TextStyle(color: Color(0xFFAAAAAA)),
-                      filled: true,
-                      fillColor: const Color(0xFF232A3B),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(
-                            color: Color(0xFF5F8DFF), width: 1),
+                  const SizedBox(height: 24),
+                  // Update button
+                  Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF5F8DFF), Color(0xFF4A73E8)],
+                        begin: Alignment.centerLeft,
+                        end: Alignment.centerRight,
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF5F8DFF).withOpacity(0.4),
+                          blurRadius: 12,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
+                    ),
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        updateField();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.transparent,
+                        shadowColor: Colors.transparent,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: const [
+                          Icon(Icons.check_circle_outline,
+                              color: Colors.white, size: 22),
+                          SizedBox(width: 8),
+                          Text(
+                            'Update',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    style: const TextStyle(color: Colors.white),
                   ),
-                const SizedBox(height: 14),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    updateField();
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF5F8DFF),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      side: const BorderSide(color: Color(0xFF5F8DFF), width: 1),
-                    ),
-                  ),
-                  child: const Text(
-                    'Update',
-                    style: TextStyle(
-                        color: Colors.white, fontWeight: FontWeight.w600),
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -401,128 +624,288 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
     showDialog(
       context: context,
+      barrierDismissible: true,
+      barrierColor: Colors.black.withOpacity(0.7),
       builder: (context) => StatefulBuilder(
         builder: (context, setModalState) => Dialog(
           backgroundColor: Colors.transparent,
-          child: Container(
-            width: MediaQuery.of(context).size.width * 0.7,
-            constraints: BoxConstraints(
-              maxHeight: MediaQuery.of(context).size.height * 0.6,
-            ),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: const Color(0xFF1E1E1E).withOpacity(0.98),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFF5F8DFF), width: 1),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    IconButton(
-                      onPressed: () => Navigator.pop(context),
-                      icon:
-                          const Icon(Icons.close, color: Colors.white, size: 22),
-                    ),
+          elevation: 0,
+          child: TweenAnimationBuilder(
+            duration: const Duration(milliseconds: 300),
+            tween: Tween<double>(begin: 0.0, end: 1.0),
+            builder: (context, double value, child) {
+              return Transform.scale(
+                scale: 0.8 + (0.2 * value),
+                child: Opacity(
+                  opacity: value,
+                  child: child,
+                ),
+              );
+            },
+            child: Container(
+              width: MediaQuery.of(context).size.width * 0.9,
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.7,
+              ),
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    const Color(0xFF1A1F2E),
+                    const Color(0xFF0F141E),
                   ],
                 ),
-                const Text(
-                  'Edit Interests',
-                  style: TextStyle(
-                    color: Color(0xFF5F8DFF),
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                  ),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: const Color(0xFF5F8DFF).withOpacity(0.5),
+                  width: 2,
                 ),
-                const SizedBox(height: 10),
-                Expanded(
-                  child: SingleChildScrollView(
-                    child: Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: categories.map((cat) {
-                        final isSelected = tempInterests.contains(cat['name']);
-                        return GestureDetector(
-                          onTap: () {
-                            debugPrint(
-                                'Tapping category: ${cat['name']}, currently selected: $isSelected');
-                            toggleInterest(cat['name']);
-                            setModalState(() {}); // Rebuild modal UI immediately
-                          },
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 250),
-                            curve: Curves.easeInOut,
-                            padding: const EdgeInsets.symmetric(
-                                vertical: 8, horizontal: 16),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF5F8DFF).withOpacity(0.3),
+                    blurRadius: 20,
+                    spreadRadius: 2,
+                    offset: const Offset(0, 8),
+                  ),
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.5),
+                    blurRadius: 30,
+                    spreadRadius: 5,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Header
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
-                              color: tempInterests.contains(cat['name'])
-                                  ? const Color(0xFF5F8DFF)
-                                  : const Color(0xFF232A3B),
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                  color: const Color(0xFF5F8DFF),
-                                  width: tempInterests.contains(cat['name'])
-                                      ? 2
-                                      : 1),
-                              boxShadow: tempInterests.contains(cat['name'])
-                                  ? [
-                                      BoxShadow(
-                                        color: const Color(0xFF5F8DFF)
-                                            .withOpacity(0.3),
-                                        blurRadius: 8,
-                                        offset: const Offset(0, 2),
-                                      )
-                                    ]
-                                  : null,
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFF5F8DFF), Color(0xFF4A73E8)],
+                              ),
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color:
+                                      const Color(0xFF5F8DFF).withOpacity(0.4),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
                             ),
-                            child: AnimatedDefaultTextStyle(
-                              duration: const Duration(milliseconds: 250),
-                              style: TextStyle(
-                                color: tempInterests.contains(cat['name'])
-                                    ? Colors.white
-                                    : const Color(0xFF5F8DFF),
-                                fontSize:
-                                    tempInterests.contains(cat['name']) ? 16 : 15,
-                                fontWeight: tempInterests.contains(cat['name'])
-                                    ? FontWeight.w700
-                                    : FontWeight.w600,
-                              ),
-                              child: Text(
-                                cat['name'],
-                              ),
+                            child: const Icon(
+                              Icons.category,
+                              color: Colors.white,
+                              size: 24,
                             ),
                           ),
-                        );
-                      }).toList(),
+                          const SizedBox(width: 12),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Edit Interests',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                              Text(
+                                '${tempInterests.length} selected',
+                                style: TextStyle(
+                                  color: Colors.white.withOpacity(0.6),
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF232A3B),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: const Color(0xFF5F8DFF).withOpacity(0.3),
+                            width: 1,
+                          ),
+                        ),
+                        child: IconButton(
+                          onPressed: () => Navigator.pop(context),
+                          icon: const Icon(Icons.close,
+                              color: Colors.white, size: 20),
+                          padding: const EdgeInsets.all(8),
+                          constraints: const BoxConstraints(),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    width: double.infinity,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF5F8DFF), Color(0xFF4A73E8)],
+                      ),
+                      borderRadius: BorderRadius.circular(2),
                     ),
                   ),
-                ),
-                const SizedBox(height: 14),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    updateInterests();
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF5F8DFF),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      side: const BorderSide(color: Color(0xFF5F8DFF), width: 1),
+                  const SizedBox(height: 20),
+                  // Categories
+                  Expanded(
+                    child: SingleChildScrollView(
+                      child: Wrap(
+                        spacing: 10,
+                        runSpacing: 10,
+                        children: categories.map((cat) {
+                          final isSelected =
+                              tempInterests.contains(cat['name']);
+                          return GestureDetector(
+                            onTap: () {
+                              debugPrint(
+                                  'Tapping category: ${cat['name']}, currently selected: $isSelected');
+                              toggleInterest(cat['name']);
+                              setModalState(
+                                  () {}); // Rebuild modal UI immediately
+                            },
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 250),
+                              curve: Curves.easeInOut,
+                              padding: const EdgeInsets.symmetric(
+                                  vertical: 12, horizontal: 20),
+                              decoration: BoxDecoration(
+                                gradient: isSelected
+                                    ? const LinearGradient(
+                                        colors: [
+                                          Color(0xFF5F8DFF),
+                                          Color(0xFF4A73E8)
+                                        ],
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                      )
+                                    : null,
+                                color:
+                                    isSelected ? null : const Color(0xFF232A3B),
+                                borderRadius: BorderRadius.circular(25),
+                                border: Border.all(
+                                  color: isSelected
+                                      ? const Color(0xFF5F8DFF)
+                                      : const Color(0xFF5F8DFF)
+                                          .withOpacity(0.3),
+                                  width: isSelected ? 2 : 1,
+                                ),
+                                boxShadow: isSelected
+                                    ? [
+                                        BoxShadow(
+                                          color: const Color(0xFF5F8DFF)
+                                              .withOpacity(0.4),
+                                          blurRadius: 12,
+                                          offset: const Offset(0, 4),
+                                        ),
+                                      ]
+                                    : null,
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  if (isSelected)
+                                    const Padding(
+                                      padding: EdgeInsets.only(right: 8),
+                                      child: Icon(
+                                        Icons.check_circle,
+                                        color: Colors.white,
+                                        size: 18,
+                                      ),
+                                    ),
+                                  AnimatedDefaultTextStyle(
+                                    duration: const Duration(milliseconds: 250),
+                                    style: TextStyle(
+                                      color: isSelected
+                                          ? Colors.white
+                                          : const Color(0xFF5F8DFF),
+                                      fontSize: isSelected ? 15 : 14,
+                                      fontWeight: isSelected
+                                          ? FontWeight.bold
+                                          : FontWeight.w600,
+                                      letterSpacing: 0.3,
+                                    ),
+                                    child: Text(
+                                      cat['name'],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
                     ),
                   ),
-                  child: const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                    child: Text(
-                      'Update Interests',
-                      style: TextStyle(
-                          color: Colors.white, fontWeight: FontWeight.w600),
+                  const SizedBox(height: 20),
+                  // Update button
+                  Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF5F8DFF), Color(0xFF4A73E8)],
+                        begin: Alignment.centerLeft,
+                        end: Alignment.centerRight,
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF5F8DFF).withOpacity(0.4),
+                          blurRadius: 12,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
+                    ),
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        updateInterests();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.transparent,
+                        shadowColor: Colors.transparent,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: const [
+                          Icon(Icons.check_circle_outline,
+                              color: Colors.white, size: 22),
+                          SizedBox(width: 8),
+                          Text(
+                            'Update Interests',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

@@ -58,7 +58,6 @@ class _PostScreenState extends State<PostScreen> {
     });
 
     _scrollController.addListener(() {
-      // Hide/show actions based on scroll direction with animation
       if (_scrollController.position.userScrollDirection ==
           ScrollDirection.reverse) {
         if (showActions) {
@@ -80,7 +79,6 @@ class _PostScreenState extends State<PostScreen> {
     super.dispose();
   }
 
-  // Load read post IDs from SharedPreferences
   Future<void> loadReadPostIds() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -97,7 +95,6 @@ class _PostScreenState extends State<PostScreen> {
     debugPrint('Loaded read post IDs: $readPostIds');
   }
 
-  // Load viewed post IDs from SharedPreferences
   Future<void> loadViewedPostIds() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -222,7 +219,7 @@ class _PostScreenState extends State<PostScreen> {
           final currentLikes =
               int.tryParse(post['likes_count']?.toString() ?? '0') ?? 0;
           post['likes_count'] = (currentLikes + (isLiked ? -1 : 1)).toString();
-          post['is_liked'] = isLiked ? 0 : 1; // Update like status in post data
+          post['is_liked'] = isLiked ? 0 : 1; 
           debugPrint('Updated post $postId is_liked to: ${post['is_liked']}');
         }
       });
@@ -253,7 +250,6 @@ class _PostScreenState extends State<PostScreen> {
           debugPrint('Added post $postId to savedPostIds');
         }
 
-        // Update count in local posts list
         final postIndex =
             posts.indexWhere((p) => p['id']?.toString() == postId);
         if (postIndex != -1) {
@@ -261,7 +257,7 @@ class _PostScreenState extends State<PostScreen> {
           final currentSaves =
               int.tryParse(post['saves_count']?.toString() ?? '0') ?? 0;
           post['saves_count'] = (currentSaves + (isSaved ? -1 : 1)).toString();
-          post['is_saved'] = isSaved ? 0 : 1; // Update save status in post data
+          post['is_saved'] = isSaved ? 0 : 1; 
           debugPrint('Updated post $postId is_saved to: ${post['is_saved']}');
         }
 
@@ -367,7 +363,6 @@ class _PostScreenState extends State<PostScreen> {
       debugPrint('Final likedPostIds after fetching: $likedPostIds');
       debugPrint('Final savedPostIds after fetching: $savedPostIds');
 
-      // Calculate unread count after fetching posts
       _calculateUnreadCount();
     } catch (e) {
       debugPrint("Error fetching posts: $e");
