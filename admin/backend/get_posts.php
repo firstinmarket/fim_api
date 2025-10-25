@@ -12,7 +12,32 @@ require_once '../resource/conn.php';
 
 try {
     $pdo = getDB();
-    $stmt = $pdo->prepare("SELECT posts.id, posts.title, posts.image, posts.content, posts.likes_count, posts.shares_count, posts.saves_count, posts.views_count, posts.category_id, posts.category_id, subcategories.name AS subcategory_name, posts.created_at, posts.updated_at, posts.language, posts.status, posts.scheduled_time FROM posts LEFT JOIN subcategories ON posts.category_id = subcategories.id ORDER BY posts.created_at DESC");
+    $stmt = $pdo->prepare("
+        SELECT 
+            posts.id, 
+            posts.title, 
+            posts.image, 
+            posts.content, 
+            posts.likes_count, 
+            posts.shares_count, 
+            posts.saves_count, 
+            posts.views_count, 
+            posts.category_id, 
+            posts.category_id, 
+            subcategories.name AS subcategory_name, 
+            posts.created_at, 
+            posts.updated_at, 
+            posts.language, 
+            posts.status, 
+            posts.scheduled_time,
+            CASE WHEN nl.id IS NOT NULL THEN 1 ELSE 0 END as notification_sent,
+            nl.sent_count,
+            nl.sent_at as notification_sent_at
+        FROM posts 
+        LEFT JOIN subcategories ON posts.category_id = subcategories.id 
+        LEFT JOIN notification_logs nl ON posts.id = nl.post_id
+        ORDER BY posts.created_at DESC
+    ");
     $stmt->execute();
     $posts = $stmt->fetchAll(PDO::FETCH_ASSOC);
     echo json_encode([

@@ -324,6 +324,9 @@ try {
                                         <td class="px-6 py-4 whitespace-nowrap">{{post.subcategory_name }}</td>
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <span :class="getStatusClass(post.status)">{{ post.status }}</span>
+                                            <span v-if="post.notification_sent" class="ml-2 text-xs text-green-400" title="Notification sent">
+                                                🔔
+                                            </span>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <span class="text-xs text-gray-400">Likes: {{ post.likes_count }} | Shares: {{ post.shares_count }} | Saves: {{ post.saves_count }} | Views: {{ post.views_count }}</span>
@@ -334,6 +337,10 @@ try {
                                             <button @click="openPostDetails(post)" class="text-blue-400 hover:text-blue-600 mr-2" title="View">
                                                 <!-- Eye SVG -->
                                                 <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                            </button>
+                                            <button @click="sendNotification(post)" :disabled="post.status !== 'published'" class="text-green-400 hover:text-green-600 mr-2 disabled:opacity-30 disabled:cursor-not-allowed" :title="post.status === 'published' ? 'Send Push Notification' : 'Only published posts can send notifications'">
+                                                <!-- Bell SVG -->
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
                                             </button>
                                             <button @click="editPost(post)" class="text-primary hover:text-primary-dark mr-2" title="Edit">
                                                 <!-- Edit SVG -->
@@ -1435,6 +1442,42 @@ try {
                             }
                         } catch (error) {
                             alert('Error deleting post. Please try again.');
+                        }
+                    };
+                    
+                    // Send Push Notification
+                    const isSendingNotification = ref(false);
+                    const sendNotification = async (post) => {
+                        if (post.status !== 'published') {
+                            alert('Only published posts can send notifications!');
+                            return;
+                        }
+                        
+                        if (!confirm(`Send push notification for "${post.title}" to all subscribed users?`)) {
+                            return;
+                        }
+                        
+                        isSendingNotification.value = true;
+                        try {
+                            const response = await fetch('./backend/send_post_notification.php', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({ post_id: post.id })
+                            });
+                            const result = await response.json();
+                            
+                            if (result.success) {
+                                alert(`✅ Notification sent successfully!\n\nSent: ${result.data.sent_count}\nFailed: ${result.data.failed_count}\nCategories: ${result.data.categories}`);
+                            } else {
+                                alert(`❌ Failed to send notification\n\n${result.message}`);
+                            }
+                        } catch (error) {
+                            console.error('Notification error:', error);
+                            alert('❌ Error sending notification. Please try again.');
+                        } finally {
+                            isSendingNotification.value = false;
                         }
                     };
                     
