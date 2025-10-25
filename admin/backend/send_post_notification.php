@@ -11,6 +11,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
 require_once '../../api/config/db.php';
 require_once '../../api/helpers/PushNotificationHelper.php';
 
+if (!class_exists('PushNotificationHelper')) {
+  
+    class PushNotificationHelper {
+        public static function sendToCategory(int $categoryId, string $title, string $body, array $data): bool {
+            return false;
+        }
+
+        public static function sendToUser(int $userId, string $title, string $body, array $data): bool {
+            return false;
+        }
+    }
+}
+
 try {
     // Get POST data
     $data = json_decode(file_get_contents('php://input'), true);
