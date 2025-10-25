@@ -3,6 +3,7 @@ import 'package:flutter/rendering.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../services/api_service.dart';
+import '../../services/news_service.dart';
 import '../components/navigation.dart';
 import '../../utils/font_manager.dart';
 import 'UnreadScreen.dart';
@@ -19,7 +20,7 @@ class _PostScreenState extends State<PostScreen> {
   Set<String> likedPostIds = <String>{};
   Set<String> savedPostIds = <String>{};
   Set<String> readPostIds = <String>{};
-  Set<String> viewedPostIds = <String>{}; // Track viewed posts for view count
+  Set<String> viewedPostIds = <String>{};
   List<String> categories = [];
   List<Map<String, dynamic>> posts = [];
   int currentIndex = 0;
@@ -34,6 +35,7 @@ class _PostScreenState extends State<PostScreen> {
   int unreadCount = 0;
   final ScrollController _scrollController = ScrollController();
   double fontScale = 1.0; // Font scale factor
+  int notificationCount = 0; // Notification unread count
 
   @override
   void initState() {
@@ -42,6 +44,7 @@ class _PostScreenState extends State<PostScreen> {
     loadViewedPostIds();
     loadFontScale();
     fetchPostsAndCategories(showLoading: true);
+    _loadNotificationCount(); 
 
     _pageController.addListener(() {
       setState(() {
@@ -120,6 +123,245 @@ class _PostScreenState extends State<PostScreen> {
       });
     } catch (e) {
       debugPrint('Error loading font scale: $e');
+    }
+  }
+
+  // Load notification count
+  Future<void> _loadNotificationCount() async {
+    try {
+      final count = await NewsService.getUnreadCount();
+      if (mounted) {
+        setState(() {
+          notificationCount = count;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading notification count: $e');
+    }
+  }
+
+  // Show notification popup
+  Future<void> _showNotificationPopup() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final userId = prefs.getString('user_id');
+      if (userId == null) return;
+
+      final notifications = await NewsService.fetchNotifications(
+        userId: int.tryParse(userId),
+        hours: 24,
+      );
+
+      if (!mounted) return;
+
+      showDialog(
+        context: context,
+        builder: (context) => Dialog(
+          alignment: Alignment.centerRight,
+          insetPadding:
+              const EdgeInsets.only(left: 50, right: 16, top: 50, bottom: 50),
+          backgroundColor: Colors.transparent,
+          child: Container(
+            width: 300,
+            decoration: BoxDecoration(
+              color: const Color(0xFF1A1A2E),
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.3),
+                  blurRadius: 20,
+                  offset: const Offset(-4, 0),
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                // Header
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.orange.shade400,
+                        Colors.deepOrange.shade500
+                      ],
+                    ),
+                    borderRadius:
+                        const BorderRadius.vertical(top: Radius.circular(16)),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Notifications',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.close, color: Colors.white),
+                        iconSize: 20,
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Notification list
+                Expanded(
+                  child: notifications.isEmpty
+                      ? const Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(32.0),
+                            child: Text(
+                              'No new notifications',
+                              style: TextStyle(
+                                color: Colors.white54,
+                                fontSize: 14,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        )
+                      : ListView.separated(
+                          padding: const EdgeInsets.all(16),
+                          itemCount: notifications.length,
+                          separatorBuilder: (context, index) => const Divider(
+                            color: Colors.white12,
+                            height: 24,
+                          ),
+                          itemBuilder: (context, index) {
+                            final notification = notifications[index];
+                            return GestureDetector(
+                              onTap: () {
+                                Navigator.pop(context);
+                                // TODO: Navigate to post detail
+                                debugPrint(
+                                    'Tapped notification: ${notification.post.title}');
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF232A3B),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    // Post image
+                                    if (notification.post.image != null)
+                                      ClipRRect(
+                                        borderRadius: BorderRadius.circular(8),
+                                        child: Image.network(
+                                          notification.post.image!,
+                                          width: 60,
+                                          height: 60,
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (ctx, error, stack) =>
+                                              Container(
+                                            width: 60,
+                                            height: 60,
+                                            color: Colors.grey[800],
+                                            child: const Icon(Icons.image,
+                                                color: Colors.white54),
+                                          ),
+                                        ),
+                                      ),
+                                    const SizedBox(width: 12),
+                                    // Content
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            children: [
+                                              if (notification.isNew)
+                                                Container(
+                                                  margin: const EdgeInsets.only(
+                                                      right: 6),
+                                                  padding: const EdgeInsets
+                                                      .symmetric(
+                                                    horizontal: 6,
+                                                    vertical: 2,
+                                                  ),
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.orange,
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            4),
+                                                  ),
+                                                  child: const Text(
+                                                    'NEW',
+                                                    style: TextStyle(
+                                                      color: Colors.white,
+                                                      fontSize: 10,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                                  ),
+                                                ),
+                                              Text(
+                                                notification.timeAgo,
+                                                style: const TextStyle(
+                                                  color: Colors.white54,
+                                                  fontSize: 11,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            notification.post.title,
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                          if (notification.post.categories !=
+                                              null) ...[
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              notification.post.categories!,
+                                              style: const TextStyle(
+                                                color: Colors.white54,
+                                                fontSize: 11,
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ],
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      // Mark notifications as seen
+      if (notifications.isNotEmpty) {
+        final lastId = notifications.first.id;
+        await NewsService.markNotificationsAsSeen(lastId);
+        await _loadNotificationCount(); // Refresh count
+      }
+    } catch (e) {
+      debugPrint('Error showing notification popup: $e');
     }
   }
 
@@ -219,7 +461,7 @@ class _PostScreenState extends State<PostScreen> {
           final currentLikes =
               int.tryParse(post['likes_count']?.toString() ?? '0') ?? 0;
           post['likes_count'] = (currentLikes + (isLiked ? -1 : 1)).toString();
-          post['is_liked'] = isLiked ? 0 : 1; 
+          post['is_liked'] = isLiked ? 0 : 1;
           debugPrint('Updated post $postId is_liked to: ${post['is_liked']}');
         }
       });
@@ -257,7 +499,7 @@ class _PostScreenState extends State<PostScreen> {
           final currentSaves =
               int.tryParse(post['saves_count']?.toString() ?? '0') ?? 0;
           post['saves_count'] = (currentSaves + (isSaved ? -1 : 1)).toString();
-          post['is_saved'] = isSaved ? 0 : 1; 
+          post['is_saved'] = isSaved ? 0 : 1;
           debugPrint('Updated post $postId is_saved to: ${post['is_saved']}');
         }
 
@@ -764,6 +1006,56 @@ class _PostScreenState extends State<PostScreen> {
                   ),
                   Row(
                     children: [
+                      // Notification icon with badge
+                      GestureDetector(
+                        onTap: _showNotificationPopup,
+                        child: Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF232A3B),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Icon(
+                                Icons.notifications_outlined,
+                                color: Color(0xFF5F8DFF),
+                                size: 20,
+                              ),
+                            ),
+                            if (notificationCount > 0)
+                              Positioned(
+                                right: -4,
+                                top: -4,
+                                child: Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: const BoxDecoration(
+                                    color: Colors.red,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  constraints: const BoxConstraints(
+                                    minWidth: 18,
+                                    minHeight: 18,
+                                  ),
+                                  child: Center(
+                                    child: Text(
+                                      notificationCount > 99
+                                          ? '99+'
+                                          : '$notificationCount',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
                       // Unread posts button
                       if (unreadCount > 0)
                         GestureDetector(
