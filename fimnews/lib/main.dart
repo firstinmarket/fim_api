@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:firebase_core/firebase_core.dart';
 import 'screens/mainScreen.dart';
 import 'screens/auth/loginScreen.dart';
@@ -8,10 +7,9 @@ import 'screens/profile/ProfileScreen.dart';
 import 'screens/posts/PostScreen.dart';
 import 'screens/posts/SavedPostsScreen.dart';
 import 'screens/posts/UnreadScreen.dart';
-import 'services/push_notification_service.dart';
+
 import 'services/notification_service.dart';
 import 'services/news_service.dart';
-
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,27 +18,18 @@ void main() async {
     await Firebase.initializeApp();
     debugPrint('Firebase initialized successfully');
 
-    // Initialize Local Notifications
     await NotificationService.initialize();
     debugPrint('Local notifications initialized');
 
-    // Start background polling for new posts
     NewsService.startPolling();
     debugPrint('Background polling started');
-
-    // Initialize FCM only if not Web
-    if (!kIsWeb) {
-      await PushNotificationService.initialize();
-      debugPrint('Push notifications initialized');
-    } else {
-      debugPrint('Push notifications skipped for web platform');
-    }
   } catch (e) {
     debugPrint('Error initializing Firebase: $e');
   }
 
   runApp(const MyApp());
 }
+
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
