@@ -8,8 +8,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
     exit(0);
 }
 
-require_once '../../api/config/db.php';
-require_once '../../api/helpers/PushNotificationHelper.php';
+require_once '../resource/conn.php';
 
 if (!class_exists('PushNotificationHelper')) {
   
