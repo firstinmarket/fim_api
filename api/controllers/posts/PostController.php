@@ -72,19 +72,7 @@ class PostController {
             }
         }
     }
-    public static function addPost($data) {
-        $title = $data['title'] ?? '';
-        $image = $data['image'] ?? '';
-        $description = $data['description'] ?? '';
-        $content = $data['content'] ?? '';
-        if (!$title || !$content) {
-            return ['status' => 400, 'body' => ['error' => 'Title and content are required.']];
-        }
-        $pdo = getDB();
-        $stmt = $pdo->prepare('INSERT INTO posts (title, image, description, content) VALUES (?, ?, ?, ?)');
-        $stmt->execute([$title, $image, $description, $content]);
-        return ['status' => 201, 'body' => ['success' => true, 'message' => 'Post added successfully']];
-    }
+  
 
     public static function getPosts($user_id = null) {
         $pdo = getDB();
@@ -100,16 +88,20 @@ class PostController {
                     SELECT p.*,
                            GROUP_CONCAT(DISTINCT c.name ORDER BY c.name SEPARATOR ", ") AS category_names,
                            GROUP_CONCAT(DISTINCT c.id ORDER BY c.id) AS category_ids,
+                           CASE WHEN pl.id IS NOT NULL THEN 1 ELSE 0 END AS is_liked,
+                           CASE WHEN sc.id IS NOT NULL THEN 1 ELSE 0 END AS is_saved,
                            ? AS user_language
                     FROM posts p 
                     LEFT JOIN post_categories pc ON pc.post_id = p.id
                     LEFT JOIN categories c ON pc.category_id = c.id
+                    LEFT JOIN post_likes pl ON pl.post_id = p.id AND pl.user_id = ?
+                    LEFT JOIN saved_counts sc ON sc.post_id = p.id AND sc.user_id = ?
                     WHERE p.language = ?
                         AND p.status = "published"
                     GROUP BY p.id
                     ORDER BY p.created_at DESC
                 ');
-                $stmt->execute([$userLanguage, $userLanguage]);
+                $stmt->execute([$userLanguage, $user_id, $user_id, $userLanguage]);
                 
                 error_log("PostController: Fetching all PUBLISHED posts for user $user_id with language: $userLanguage");
             } else {
@@ -152,8 +144,8 @@ class PostController {
             $userData = $userStmt->fetch();
             $userLanguage = $userData ? ($userData['language'] ?? 'english') : 'english';
             
-          $stmt = $pdo->prepare('
-                SELECT DISTINCT p.*,
+            $stmt = $pdo->prepare('
+                SELECT p.*,
                        GROUP_CONCAT(DISTINCT c.name ORDER BY c.name SEPARATOR ", ") AS category_names,
                        GROUP_CONCAT(DISTINCT c.id ORDER BY c.id) AS category_ids,
                        CASE WHEN pl.id IS NOT NULL THEN 1 ELSE 0 END AS is_liked,
@@ -161,12 +153,12 @@ class PostController {
                        ? AS user_language
                 FROM posts p
                 INNER JOIN post_categories pc ON pc.post_id = p.id
-                INNER JOIN categories c ON pc.category_id = c.id
-                INNER JOIN user_categories uc ON uc.category_id = pc.category_id
+                INNER JOIN user_categories uc ON uc.category_id = pc.category_id AND uc.user_id = ?
+                LEFT JOIN post_categories pc_all ON pc_all.post_id = p.id
+                LEFT JOIN categories c ON pc_all.category_id = c.id
                 LEFT JOIN post_likes pl ON pl.post_id = p.id AND pl.user_id = ?
                 LEFT JOIN saved_counts sc ON sc.post_id = p.id AND sc.user_id = ?
-                WHERE uc.user_id = ? 
-                    AND p.language = ?
+                WHERE p.language = ?
                     AND p.status = "published"
                 GROUP BY p.id
                 ORDER BY p.created_at DESC

@@ -124,6 +124,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
         final profile = response['profile'];
         final userInfo = profile['user'] ?? {};
         final categories = profile['categories'] ?? [];
+
+        debugPrint('ProfileScreen: Raw categories from API: $categories');
+
         setState(() {
           user = {
             ...user,
@@ -135,12 +138,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
             'language': userInfo['language'] ?? 'english',
             'interests': List<String>.from(
               categories
-                  .map((cat) => cat['subcategory_name'] ?? '')
-                  .where((name) => name != null && name != '')
+                  .map((cat) => cat['category_name'] ?? '')
+                  .where((name) => name != null && name.toString().isNotEmpty)
                   .toList(),
             ),
           };
           debugPrint('ProfileScreen: Profile loaded: ${user['name']}');
+          debugPrint('ProfileScreen: Loaded interests: ${user['interests']}');
         });
       } else {
         _showErrorDialog(response is Map<String, dynamic>
@@ -682,56 +686,57 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 children: [
                   // Header
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              gradient: const LinearGradient(
-                                colors: [Color(0xFF5F8DFF), Color(0xFF4A73E8)],
-                              ),
-                              borderRadius: BorderRadius.circular(12),
-                              boxShadow: [
-                                BoxShadow(
-                                  color:
-                                      const Color(0xFF5F8DFF).withOpacity(0.4),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            child: const Icon(
-                              Icons.category,
-                              color: Colors.white,
-                              size: 24,
-                            ),
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF5F8DFF), Color(0xFF4A73E8)],
                           ),
-                          const SizedBox(width: 12),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                'Edit Interests',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
-                              Text(
-                                '${tempInterests.length} selected',
-                                style: TextStyle(
-                                  color: Colors.white.withOpacity(0.6),
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF5F8DFF).withOpacity(0.4),
+                              blurRadius: 8,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.category,
+                          color: Colors.white,
+                          size: 24,
+                        ),
                       ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Edit Interests',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.5,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
+                            ),
+                            Text(
+                              '${tempInterests.length} selected',
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.6),
+                                fontSize: 12,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
                       Container(
                         decoration: BoxDecoration(
                           color: const Color(0xFF232A3B),
@@ -746,7 +751,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           icon: const Icon(Icons.close,
                               color: Colors.white, size: 20),
                           padding: const EdgeInsets.all(8),
-                          constraints: const BoxConstraints(),
+                          constraints: const BoxConstraints(
+                            minWidth: 36,
+                            minHeight: 36,
+                          ),
                         ),
                       ),
                     ],
@@ -764,92 +772,103 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   const SizedBox(height: 20),
                   // Categories
-                  Expanded(
+                  Flexible(
                     child: SingleChildScrollView(
-                      child: Wrap(
-                        spacing: 10,
-                        runSpacing: 10,
-                        children: categories.map((cat) {
-                          final isSelected =
-                              tempInterests.contains(cat['name']);
-                          return GestureDetector(
-                            onTap: () {
-                              debugPrint(
-                                  'Tapping category: ${cat['name']}, currently selected: $isSelected');
-                              toggleInterest(cat['name']);
-                              setModalState(
-                                  () {}); // Rebuild modal UI immediately
-                            },
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 250),
-                              curve: Curves.easeInOut,
-                              padding: const EdgeInsets.symmetric(
-                                  vertical: 12, horizontal: 20),
-                              decoration: BoxDecoration(
-                                gradient: isSelected
-                                    ? const LinearGradient(
-                                        colors: [
-                                          Color(0xFF5F8DFF),
-                                          Color(0xFF4A73E8)
-                                        ],
-                                        begin: Alignment.topLeft,
-                                        end: Alignment.bottomRight,
-                                      )
-                                    : null,
-                                color:
-                                    isSelected ? null : const Color(0xFF232A3B),
-                                borderRadius: BorderRadius.circular(25),
-                                border: Border.all(
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        child: Wrap(
+                          spacing: 10,
+                          runSpacing: 10,
+                          alignment: WrapAlignment.start,
+                          children: categories.map((cat) {
+                            final isSelected =
+                                tempInterests.contains(cat['name']);
+                            return GestureDetector(
+                              onTap: () {
+                                debugPrint(
+                                    'Tapping category: ${cat['name']}, currently selected: $isSelected');
+                                toggleInterest(cat['name']);
+                                setModalState(
+                                    () {}); // Rebuild modal UI immediately
+                              },
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 250),
+                                curve: Curves.easeInOut,
+                                padding: const EdgeInsets.symmetric(
+                                    vertical: 12, horizontal: 20),
+                                decoration: BoxDecoration(
+                                  gradient: isSelected
+                                      ? const LinearGradient(
+                                          colors: [
+                                            Color(0xFF5F8DFF),
+                                            Color(0xFF4A73E8)
+                                          ],
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight,
+                                        )
+                                      : null,
                                   color: isSelected
-                                      ? const Color(0xFF5F8DFF)
-                                      : const Color(0xFF5F8DFF)
-                                          .withOpacity(0.3),
-                                  width: isSelected ? 2 : 1,
+                                      ? null
+                                      : const Color(0xFF232A3B),
+                                  borderRadius: BorderRadius.circular(25),
+                                  border: Border.all(
+                                    color: isSelected
+                                        ? const Color(0xFF5F8DFF)
+                                        : const Color(0xFF5F8DFF)
+                                            .withOpacity(0.3),
+                                    width: isSelected ? 2 : 1,
+                                  ),
+                                  boxShadow: isSelected
+                                      ? [
+                                          BoxShadow(
+                                            color: const Color(0xFF5F8DFF)
+                                                .withOpacity(0.4),
+                                            blurRadius: 12,
+                                            offset: const Offset(0, 4),
+                                          ),
+                                        ]
+                                      : null,
                                 ),
-                                boxShadow: isSelected
-                                    ? [
-                                        BoxShadow(
-                                          color: const Color(0xFF5F8DFF)
-                                              .withOpacity(0.4),
-                                          blurRadius: 12,
-                                          offset: const Offset(0, 4),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    if (isSelected)
+                                      const Padding(
+                                        padding: EdgeInsets.only(right: 8),
+                                        child: Icon(
+                                          Icons.check_circle,
+                                          color: Colors.white,
+                                          size: 18,
                                         ),
-                                      ]
-                                    : null,
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  if (isSelected)
-                                    const Padding(
-                                      padding: EdgeInsets.only(right: 8),
-                                      child: Icon(
-                                        Icons.check_circle,
-                                        color: Colors.white,
-                                        size: 18,
+                                      ),
+                                    Flexible(
+                                      child: AnimatedDefaultTextStyle(
+                                        duration:
+                                            const Duration(milliseconds: 250),
+                                        style: TextStyle(
+                                          color: isSelected
+                                              ? Colors.white
+                                              : const Color(0xFF5F8DFF),
+                                          fontSize: isSelected ? 15 : 14,
+                                          fontWeight: isSelected
+                                              ? FontWeight.bold
+                                              : FontWeight.w600,
+                                          letterSpacing: 0.3,
+                                        ),
+                                        child: Text(
+                                          cat['name'],
+                                          overflow: TextOverflow.ellipsis,
+                                          maxLines: 1,
+                                        ),
                                       ),
                                     ),
-                                  AnimatedDefaultTextStyle(
-                                    duration: const Duration(milliseconds: 250),
-                                    style: TextStyle(
-                                      color: isSelected
-                                          ? Colors.white
-                                          : const Color(0xFF5F8DFF),
-                                      fontSize: isSelected ? 15 : 14,
-                                      fontWeight: isSelected
-                                          ? FontWeight.bold
-                                          : FontWeight.w600,
-                                      letterSpacing: 0.3,
-                                    ),
-                                    child: Text(
-                                      cat['name'],
-                                    ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
-                            ),
-                          );
-                        }).toList(),
+                            );
+                          }).toList(),
+                        ),
                       ),
                     ),
                   ),
@@ -975,12 +994,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (response['success'] == true) {
         debugPrint(
             'ProfileScreen: Interests (categories) update successful, response: $response');
-        _showSuccessDialog('Interests Updated',
-            response['message'] ?? 'Interests updated successfully');
+
+        // Update local state immediately
         setState(() {
-          user = {...user, 'interests': tempInterests};
+          user = {...user, 'interests': List<String>.from(tempInterests)};
           editCategoryModal = false;
         });
+
+        // Refresh profile from server to ensure sync
+        await fetchProfile();
+
+        _showSuccessDialog('Interests Updated',
+            response['message'] ?? 'Interests updated successfully');
       } else {
         debugPrint(
             'ProfileScreen: Interests (categories) update failed, response: $response');
@@ -1114,7 +1139,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 // Profile container
                 const SizedBox(height: 20),
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Container(
                       width: 64,
@@ -1159,6 +1183,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               color: Color(0xFF5F8DFF),
                               fontWeight: FontWeight.w700,
                             ),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
                           ),
                           const SizedBox(height: 4),
                           Text(
@@ -1167,6 +1193,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               color: Color(0xFFEEEEEE),
                               fontSize: 14,
                             ),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
                           ),
                         ],
                       ),
@@ -1177,6 +1205,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         Icons.edit,
                         size: 20,
                         color: Color(0xFF5F8DFF),
+                      ),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(
+                        minWidth: 40,
+                        minHeight: 40,
                       ),
                     ),
                   ],
@@ -1194,15 +1227,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      const Row(
                         children: [
-                          const Text(
-                            'Personal Details',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                              color: Color(0xFF5F8DFF),
+                          Expanded(
+                            child: Text(
+                              'Personal Details',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF5F8DFF),
+                              ),
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ],
@@ -1239,45 +1274,63 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text(
-                            'Interested Topics',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                              color: Color(0xFF5F8DFF),
+                          const Expanded(
+                            child: Text(
+                              'Interested Topics',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF5F8DFF),
+                              ),
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                           IconButton(
                             onPressed: openCategoryModal,
                             icon: const Icon(Icons.edit,
                                 size: 18, color: Color(0xFF5F8DFF)),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(
+                              minWidth: 36,
+                              minHeight: 36,
+                            ),
                           ),
                         ],
                       ),
                       const SizedBox(height: 16),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: user['interests'].map<Widget>((topic) {
-                          return Container(
-                            padding: const EdgeInsets.symmetric(
-                                vertical: 6, horizontal: 12),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF5F8DFF),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(
-                              topic,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 13,
+                      user['interests'].isEmpty
+                          ? Text(
+                              'No interests selected',
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.5),
+                                fontSize: 14,
+                                fontStyle: FontStyle.italic,
                               ),
+                            )
+                          : Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: user['interests'].map<Widget>((topic) {
+                                return Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      vertical: 6, horizontal: 12),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF5F8DFF),
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Text(
+                                    topic,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 13,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                    maxLines: 1,
+                                  ),
+                                );
+                              }).toList(),
                             ),
-                          );
-                        }).toList(),
-                      ),
                     ],
                   ),
                 ),
@@ -1383,14 +1436,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                label,
-                style: const TextStyle(
-                  color: Color(0xFF5F8DFF),
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
+              Expanded(
+                child: Text(
+                  label,
+                  style: const TextStyle(
+                    color: Color(0xFF5F8DFF),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
               IconButton(
@@ -1399,6 +1454,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   Icons.edit,
                   size: 16,
                   color: Color(0xFF5F8DFF),
+                ),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(
+                  minWidth: 36,
+                  minHeight: 36,
                 ),
               ),
             ],
