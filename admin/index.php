@@ -1862,6 +1862,8 @@ try {
                         viewPost,
                         editPost,
                         deletePost,
+                        sendNotification,
+                        isSendingNotification,
                         editUser,
                         saveUser,
                         deleteUser,
