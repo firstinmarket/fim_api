@@ -42,9 +42,7 @@ try {
         $params[] = $user_id;
     }
     
-    $query .= " GROUP BY nl.id ORDER BY nl.sent_at DESC LIMIT ? OFFSET ?";
-    $params[] = (int)$limit;
-    $params[] = (int)$offset;
+    $query .= " GROUP BY nl.id ORDER BY nl.sent_at DESC LIMIT " . (int)$limit . " OFFSET " . (int)$offset;
     
     $stmt = $pdo->prepare($query);
     $stmt->execute($params);
