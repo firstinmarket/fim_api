@@ -91,7 +91,8 @@ class NewsService {
   static Future<int> getUnreadCount() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final userId = prefs.getInt('user_id');
+      final userIdString = prefs.getString('user_id');
+      final userId = userIdString != null ? int.tryParse(userIdString) : null;
       final lastSeenId = prefs.getInt('last_seen_notification_id') ?? 0;
 
       final notifications = await fetchNotifications(userId: userId, hours: 24);

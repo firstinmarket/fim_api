@@ -44,7 +44,7 @@ class _PostScreenState extends State<PostScreen> {
     loadViewedPostIds();
     loadFontScale();
     fetchPostsAndCategories(showLoading: true);
-    _loadNotificationCount(); 
+    _loadNotificationCount();
 
     _pageController.addListener(() {
       setState(() {
@@ -593,7 +593,7 @@ class _PostScreenState extends State<PostScreen> {
       }
 
       final Set<String> catSet =
-          posts.map((p) => p['category_name']?.toString() ?? '').toSet();
+          posts.map((p) => p['category_names']?.toString() ?? '').toSet();
       categories = catSet.where((c) => c.isNotEmpty).toList();
 
       categories.insert(0, 'All');
@@ -643,9 +643,9 @@ class _PostScreenState extends State<PostScreen> {
 
   List<Map<String, dynamic>> _getFilteredPosts() {
     if (selectedCategory.isEmpty || selectedCategory == 'All') return posts;
-    final filtered =
-        posts.where((p) => p['category_name'] == selectedCategory).toList();
-    return filtered;
+    return posts
+        .where((p) => p['category_names']?.toString() == selectedCategory)
+        .toList();
   }
 
   Widget _buildPostCard(Map<String, dynamic> currentPost) {
@@ -937,7 +937,11 @@ class _PostScreenState extends State<PostScreen> {
     setState(() {
       selectedCategory = category;
       currentIndex = 0;
-      _pageController.jumpToPage(0);
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_pageController.hasClients) {
+        _pageController.jumpToPage(0);
+      }
     });
   }
 
