@@ -8,7 +8,6 @@ import '../components/navigation.dart';
 import '../legal/PrivacyPolicyScreen.dart';
 import '../legal/DisclaimerScreen.dart';
 
-// Save OneSignal player_id to backend after login/profile load
 Future<void> saveOneSignalPlayerId() async {
   try {
     final playerId = OneSignal.User.pushSubscription.id;
@@ -20,7 +19,7 @@ Future<void> saveOneSignalPlayerId() async {
         final response =
             await ApiService.apiPost('notifications/save_onesignal.php', {
           'user_id': userId,
-          'player_id': playerId,
+          'onesignal_player_id': playerId,
         });
         debugPrint('Save OneSignal player_id response: $response');
       }
