@@ -1,12 +1,34 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:vibration/vibration.dart';
-
+import 'package:onesignal_flutter/onesignal_flutter.dart';
 import '../../services/api_service.dart';
 import '../../services/session_manager.dart';
 import '../components/navigation.dart';
 import '../legal/PrivacyPolicyScreen.dart';
 import '../legal/DisclaimerScreen.dart';
+
+// Save OneSignal player_id to backend after login/profile load
+Future<void> saveOneSignalPlayerId() async {
+  try {
+    final playerId = OneSignal.User.pushSubscription.id;
+    debugPrint('OneSignal player_id: ' + (playerId ?? 'null'));
+    if (playerId != null && playerId.isNotEmpty) {
+      final prefs = await SharedPreferences.getInstance();
+      final userId = prefs.getString('user_id');
+      if (userId != null) {
+        final response =
+            await ApiService.apiPost('notifications/save_onesignal.php', {
+          'user_id': userId,
+          'player_id': playerId,
+        });
+        debugPrint('Save OneSignal player_id response: $response');
+      }
+    }
+  } catch (e) {
+    debugPrint('Error saving OneSignal player_id: $e');
+  }
+}
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -101,12 +123,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void initState() {
     super.initState();
-    
     debugPrint('ProfileScreen: Initializing');
     fetchProfile();
     fetchCategories();
+    saveOneSignalPlayerId();
   }
-
 
   Future<void> fetchProfile() async {
     try {
