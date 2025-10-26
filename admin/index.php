@@ -962,14 +962,14 @@ try {
                     const selectedCategorySubcategories = ref([]);
                     const postForm = ref({
                         title: '',
+                        description: '',
                         content: '',
-                        category_id: '',
-                        subcategory_id: '',
+                        category_ids: [], 
                         status: 'draft',
                         scheduled_at: '',
                         image: null,
                         imageName: '',
-                        language: 'english' // default
+                        language: 'english' 
                     });
                     
                     // Reset post form
@@ -978,8 +978,7 @@ try {
                             title: '',
                             description: '',
                             content: '',
-                            category_id: '',
-                            subcategory_id: '',
+                            category_ids: [],
                             status: 'draft',
                             scheduled_at: '',
                             image: null,
@@ -1020,43 +1019,37 @@ try {
                     // Save post function
                     const savePost = async () => {
                         isSubmittingPost.value = true;
-                        
                         try {
                             const formData = new FormData();
                             formData.append('title', postForm.value.title);
                             formData.append('description', postForm.value.description);
                             formData.append('content', postForm.value.content);
-                            formData.append('category_id', postForm.value.category_id);
-                            formData.append('subcategory_id', postForm.value.subcategory_id || '');
                             formData.append('status', postForm.value.status);
                             formData.append('scheduled_at', postForm.value.scheduled_at);
                             formData.append('language', postForm.value.language);
-                            
                             if (postForm.value.image) {
                                 formData.append('image', postForm.value.image);
                             }
-                            
+                            // Append each selected category ID as category_ids[]
+                            postForm.value.category_ids.forEach(id => {
+                                formData.append('category_ids[]', id);
+                            });
                             if (editingPost.value) {
                                 formData.append('id', editingPost.value.id);
                             }
-                            
-                            const endpoint = editingPost.value ? 
-                                './backend/update_post.php' : 
+                            const endpoint = editingPost.value ?
+                                './backend/update_post.php' :
                                 './backend/create_post.php';
-                            
                             const response = await fetch(endpoint, {
                                 method: 'POST',
                                 body: formData
                             });
-                            
                             const result = await response.json();
-                            
                             if (result.success) {
                                 alert(editingPost.value ? 'Article updated successfully!' : 'Article created successfully!');
                                 showPostModal.value = false;
                                 resetPostForm();
                                 editingPost.value = null;
-                               
                             } else {
                                 alert('Error: ' + (result.message || 'Failed to save article'));
                             }
