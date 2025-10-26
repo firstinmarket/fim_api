@@ -169,9 +169,12 @@ class PostController {
             $stmt->execute([$userLanguage, $user_id, $user_id, $user_id, $userLanguage]);
             $posts = $stmt->fetchAll();
 
-            // Convert category_names to array for each post
             foreach ($posts as &$post) {
-                $post['category_names'] = isset($post['category_names']) ? explode(',', $post['category_names']) : [];
+                $categoriesArr = isset($post['category_names']) ? explode(',', $post['category_names']) : [];
+                unset($post['category_names']);
+                foreach ($categoriesArr as $i => $catName) {
+                    $post['category_' . ($i + 1)] = trim($catName);
+                }
             }
 
             error_log("PostController: Fetching PUBLISHED posts for user $user_id with language: $userLanguage");
