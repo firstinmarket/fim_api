@@ -18,10 +18,14 @@ try {
     $title = trim($_POST['title'] ?? '');
     $description = trim($_POST['description'] ?? '');
     $content = trim($_POST['content'] ?? '');
-    $subcategory_id = !empty($_POST['subcategory_id']) ? (int)$_POST['subcategory_id'] : null;
     $status = $_POST['status'] ?? 'draft';
     $scheduled_at = $_POST['scheduled_at'] ?? null;
     $language = $_POST['language'] ?? 'english';
+
+  
+    $category_ids = isset($_POST['category_ids'])
+        ? (is_array($_POST['category_ids']) ? $_POST['category_ids'] : explode(',', $_POST['category_ids']))
+        : [];
 
     if (empty($title)) {
         throw new Exception('Title is required');
@@ -29,10 +33,6 @@ try {
 
     if (empty($content)) {
         throw new Exception('Content is required');
-    }
-
-    if ($subcategory_id <= 0) {
-        throw new Exception('Valid category is required');
     }
 
     if (!in_array($status, ['draft', 'published', 'scheduled'])) {
@@ -73,8 +73,9 @@ try {
         $scheduled_at = null;
     }
 
-    
-     $stmt = $pdo->prepare("INSERT INTO posts (title, content, image, status, scheduled_time, language, likes_count, shares_count, saves_count, views_count, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, 0, 0, 0, 0, NOW(), NOW())");
+    // Insert post
+    $stmt = $pdo->prepare("INSERT INTO posts (title, content, image, status, scheduled_time, language, likes_count, shares_count, saves_count, views_count, created_at, updated_at)
+                           VALUES (?, ?, ?, ?, ?, ?, 0, 0, 0, 0, NOW(), NOW())");
     $stmt->execute([
         $title,
         $content,
@@ -86,10 +87,12 @@ try {
 
     $postId = $pdo->lastInsertId();
 
-    
-    $catStmt = $pdo->prepare("INSERT INTO post_categories (post_id, category_id, created_at) VALUES (?, ?, NOW())");
-    foreach ($category_ids as $catId) {
-        $catStmt->execute([$postId, (int)$catId]);
+    // Insert multiple categories
+    if (!empty($category_ids)) {
+        $catStmt = $pdo->prepare("INSERT INTO post_categories (post_id, category_id, created_at) VALUES (?, ?, NOW())");
+        foreach ($category_ids as $catId) {
+            $catStmt->execute([$postId, (int)$catId]);
+        }
     }
 
     echo json_encode([
@@ -107,6 +110,7 @@ try {
             'language' => $language
         ]
     ]);
+
 } catch (Exception $e) {
     http_response_code(400);
     echo json_encode([
