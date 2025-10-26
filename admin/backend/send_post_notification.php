@@ -1,5 +1,5 @@
 <?php
-require '../vendor/autoload.php';
+
 require_once '../resource/conn.php';
 
 header('Content-Type: application/json');
@@ -48,7 +48,6 @@ try {
     $sentCount = 0;
     $failedCount = 0;
 
-    // Collect player IDs by category (users table should store OneSignal player_id)
     $playerIds = [];
     if (!empty($categoryIds)) {
         foreach ($categoryIds as $catId) {
@@ -69,7 +68,7 @@ try {
 
     if (empty($playerIds)) throw new Exception('No registered devices found');
 
-    // Prepare payload for OneSignal
+    
     $payload = [
         'app_id' => $ONESIGNAL_APP_ID,
         'include_player_ids' => array_values(array_unique($playerIds)),
@@ -80,7 +79,7 @@ try {
         'android_accent_color' => 'FF9933', // optional
     ];
 
-    // Send request to OneSignal
+    
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, "https://api.onesignal.com/notifications");
     curl_setopt($ch, CURLOPT_HTTPHEADER, [
@@ -101,7 +100,6 @@ try {
 
     $sentCount = count($playerIds);
 
-    // Log notification
     $stmt = $pdo->prepare("
         INSERT INTO notification_logs (post_id, sent_count, failed_count, sent_at)
         VALUES (?, ?, ?, NOW())
