@@ -1,10 +1,6 @@
 <?php
-require  '../vendor/autoload.php';
+require '../vendor/autoload.php';
 require_once '../resource/conn.php';
-
-use Kreait\Firebase\Factory;
-use Kreait\Firebase\Messaging\CloudMessage;
-use Kreait\Firebase\Messaging\Notification;
 
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
@@ -12,6 +8,9 @@ header('Access-Control-Allow-Methods: POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') exit(0);
+
+$ONESIGNAL_APP_ID = "48392a9a-9863-4cb1-96ba-3a7820029e4f";
+$ONESIGNAL_API_KEY = "os_v2_app_ja4svguymngldfv2hj4caau6j547lhlm3vceb6ngp7bpxkzuu74gfdk63ohh45hsips3j6hvj5qz4tqah42pone4bqinzghsap24zia"; 
 
 try {
     $input = json_decode(file_get_contents('php://input'), true);
@@ -36,7 +35,7 @@ try {
     if (!$post) throw new Exception('Post not found');
 
     $title = '📰 New Article Published';
-    $body = strlen($post['title']) > 100 ? substr($post['title'],0,97).'...' : $post['title'];
+    $body = strlen($post['title']) > 100 ? substr($post['title'], 0, 97) . '...' : $post['title'];
     $notificationData = [
         'post_id' => $post['id'],
         'type' => 'new_post',
@@ -46,60 +45,63 @@ try {
     ];
 
     $categoryIds = $post['category_ids'] ? explode(',', $post['category_ids']) : [];
-
-    
-    $factory = (new Factory)->withServiceAccount('https://anbinvaram.shop/fimapp.json');
-    $messaging = $factory->createMessaging();
-
     $sentCount = 0;
     $failedCount = 0;
 
+    // Collect player IDs by category (users table should store OneSignal player_id)
+    $playerIds = [];
     if (!empty($categoryIds)) {
         foreach ($categoryIds as $catId) {
             $stmt = $pdo->prepare("
-                SELECT DISTINCT fcm_token 
+                SELECT DISTINCT onesignal_player_id 
                 FROM users u
                 INNER JOIN user_categories uc ON u.id = uc.user_id
-                WHERE uc.category_id = ? AND u.fcm_token IS NOT NULL AND u.fcm_token != ''
+                WHERE uc.category_id = ? AND u.onesignal_player_id IS NOT NULL AND u.onesignal_player_id != ''
             ");
             $stmt->execute([$catId]);
-            $tokens = $stmt->fetchAll(PDO::FETCH_COLUMN);
-
-            foreach ($tokens as $token) {
-                $message = CloudMessage::withTarget('token', $token)
-                    ->withNotification(Notification::create($title, $body))
-                    ->withData($notificationData);
-
-                try {
-                    $messaging->send($message);
-                    $sentCount++;
-                } catch (\Throwable $e) {
-                    $failedCount++;
-                    error_log("FCM send failed: ".$e->getMessage());
-                }
-            }
+            $playerIds = array_merge($playerIds, $stmt->fetchAll(PDO::FETCH_COLUMN));
         }
     } else {
-     
-        $stmt = $pdo->prepare("SELECT fcm_token FROM users WHERE fcm_token IS NOT NULL AND fcm_token != ''");
+        $stmt = $pdo->prepare("SELECT onesignal_player_id FROM users WHERE onesignal_player_id IS NOT NULL AND onesignal_player_id != ''");
         $stmt->execute();
-        $tokens = $stmt->fetchAll(PDO::FETCH_COLUMN);
-
-        foreach ($tokens as $token) {
-            $message = CloudMessage::withTarget('token', $token)
-                ->withNotification(Notification::create($title, $body))
-                ->withData($notificationData);
-            try {
-                $messaging->send($message);
-                $sentCount++;
-            } catch (\Throwable $e) {
-                $failedCount++;
-                error_log("FCM send failed: ".$e->getMessage());
-            }
-        }
+        $playerIds = $stmt->fetchAll(PDO::FETCH_COLUMN);
     }
 
-    
+    if (empty($playerIds)) throw new Exception('No registered devices found');
+
+    // Prepare payload for OneSignal
+    $payload = [
+        'app_id' => $ONESIGNAL_APP_ID,
+        'include_player_ids' => array_values(array_unique($playerIds)),
+        'headings' => ['en' => $title],
+        'contents' => ['en' => $body],
+        'data' => $notificationData,
+        'big_picture' => $post['image'] ?? null,
+        'android_accent_color' => 'FF9933', // optional
+    ];
+
+    // Send request to OneSignal
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, "https://api.onesignal.com/notifications");
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        "Content-Type: application/json; charset=utf-8",
+        "Authorization: Basic $ONESIGNAL_API_KEY"
+    ]);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    if ($httpCode !== 200) {
+        $failedCount = count($playerIds);
+        throw new Exception("OneSignal API Error: " . $response);
+    }
+
+    $sentCount = count($playerIds);
+
+    // Log notification
     $stmt = $pdo->prepare("
         INSERT INTO notification_logs (post_id, sent_count, failed_count, sent_at)
         VALUES (?, ?, ?, NOW())
@@ -108,7 +110,7 @@ try {
 
     echo json_encode([
         'success' => true,
-        'message' => 'Notification sent successfully',
+        'message' => 'Notification sent successfully via OneSignal',
         'data' => [
             'sent_count' => $sentCount,
             'failed_count' => $failedCount,
@@ -117,7 +119,7 @@ try {
         ]
     ]);
 
-} catch (\Throwable $e) {
+} catch (Throwable $e) {
     http_response_code(500);
     echo json_encode([
         'success' => false,
