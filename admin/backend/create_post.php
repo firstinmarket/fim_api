@@ -74,23 +74,23 @@ try {
     }
 
     
-    $stmt = $pdo->prepare("
-        INSERT INTO posts 
-        (title, content, image, category_id, status, scheduled_time, language, likes_count, shares_count, saves_count, views_count, created_at, updated_at) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, 0, 0, 0, 0, NOW(), NOW())
-    ");
-
+     $stmt = $pdo->prepare("INSERT INTO posts (title, content, image, status, scheduled_time, language, likes_count, shares_count, saves_count, views_count, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, 0, 0, 0, 0, NOW(), NOW())");
     $stmt->execute([
         $title,
         $content,
         $imagePath,
-        $subcategory_id,
         $status,
         $scheduled_at,
         $language
     ]);
 
     $postId = $pdo->lastInsertId();
+
+    
+    $catStmt = $pdo->prepare("INSERT INTO post_categories (post_id, category_id, created_at) VALUES (?, ?, NOW())");
+    foreach ($category_ids as $catId) {
+        $catStmt->execute([$postId, (int)$catId]);
+    }
 
     echo json_encode([
         'success' => true,
@@ -101,14 +101,12 @@ try {
             'title' => $title,
             'content' => $content,
             'image' => $imagePath,
-           
-            'subcategory_id' => $subcategory_id,
+            'category_ids' => $category_ids,
             'status' => $status,
             'scheduled_at' => $scheduled_at,
             'language' => $language
         ]
     ]);
-
 } catch (Exception $e) {
     http_response_code(400);
     echo json_encode([

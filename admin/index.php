@@ -627,25 +627,15 @@ try {
                     <!-- Category Selection -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-300 mb-2">Category *</label>
-                            <select v-model="postForm.category_id" @change="onCategoryChange" @focus="fetchCategories" :disabled="isLoadingCategories" required 
+                            <label class="block text-sm font-medium text-gray-300 mb-2">Categories *</label>
+                            <select v-model="postForm.category_ids" multiple @focus="fetchCategories" :disabled="isLoadingCategories" required
                                     class="w-full bg-gray-700 text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50">
-                                <option value="">{{ isLoadingCategories ? 'Loading categories...' : 'Select a category' }}</option>
                                 <option v-for="category in categories" :key="category.id" :value="category.id">
                                     {{ category.name }}
                                 </option>
                             </select>
                         </div>
-                        <div v-if="selectedCategorySubcategories.length > 0">
-                            <label class="block text-sm font-medium text-gray-300 mb-2">Subcategory</label>
-                            <select v-model="postForm.subcategory_id"
-                                    class="w-full bg-gray-700 text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
-                                <option value="">Select a subcategory (optional)</option>
-                                <option v-for="subcategory in selectedCategorySubcategories" :key="subcategory.id" :value="subcategory.id">
-                                    {{ subcategory.name }}
-                                </option>
-                            </select>
-                        </div>
+                        <!-- Subcategory selection removed for multi-category posts -->
                     </div>
 
                     
