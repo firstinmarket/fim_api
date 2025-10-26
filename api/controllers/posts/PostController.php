@@ -1,5 +1,3 @@
-
-
 <?php
 require_once '../../config/db.php';
 
@@ -137,16 +135,21 @@ class PostController {
 
     public static function getPostsByUserCategories($user_id) {
         $pdo = getDB();
-        
         try {
             $userStmt = $pdo->prepare('SELECT language FROM users WHERE id = ?');
             $userStmt->execute([$user_id]);
             $userData = $userStmt->fetch();
             $userLanguage = $userData ? ($userData['language'] ?? 'english') : 'english';
-            
+
+           
+            $catStmt = $pdo->prepare('SELECT c.id, c.name FROM user_categories uc INNER JOIN categories c ON uc.category_id = c.id WHERE uc.user_id = ?');
+            $catStmt->execute([$user_id]);
+            $userCategories = $catStmt->fetchAll();
+            $allCategories = array_map(function($row) { return $row['name']; }, $userCategories);
+
             $stmt = $pdo->prepare('
                 SELECT p.*,
-                       GROUP_CONCAT(DISTINCT c.name ORDER BY c.name SEPARATOR ", ") AS category_names,
+                       GROUP_CONCAT(DISTINCT c.name ORDER BY c.name SEPARATOR ",") AS category_names,
                        GROUP_CONCAT(DISTINCT c.id ORDER BY c.id) AS category_ids,
                        CASE WHEN pl.id IS NOT NULL THEN 1 ELSE 0 END AS is_liked,
                        CASE WHEN sc.id IS NOT NULL THEN 1 ELSE 0 END AS is_saved,
@@ -165,12 +168,20 @@ class PostController {
             ');
             $stmt->execute([$userLanguage, $user_id, $user_id, $user_id, $userLanguage]);
             $posts = $stmt->fetchAll();
-            
+
+            // Convert category_names to array for each post
+            foreach ($posts as &$post) {
+                $post['category_names'] = isset($post['category_names']) ? explode(',', $post['category_names']) : [];
+            }
+
             error_log("PostController: Fetching PUBLISHED posts for user $user_id with language: $userLanguage");
             error_log("PostController: Found " . count($posts) . " published posts matching user categories and language");
-            
-            return ['status' => 200, 'body' => $posts];
-            
+
+            return [
+                'status' => 200,
+                'body' => $posts,
+                'all_categories' => $allCategories
+            ];
         } catch (PDOException $e) {
             error_log("PostController: Database error in getPostsByUserCategories: " . $e->getMessage());
             return ['status' => 500, 'body' => ['error' => 'Database error occurred']];

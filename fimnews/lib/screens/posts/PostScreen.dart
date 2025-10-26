@@ -440,9 +440,9 @@ class _PostScreenState extends State<PostScreen> {
       debugPrint(
           'Toggling like for post $postId: ${isLiked ? "unlike" : "like"}');
       final response = await ApiService.apiPut('posts/posts.php', payload);
+
       debugPrint('Like toggle response: $response');
 
-      // Update likedPostIds set and trigger UI refresh
       setState(() {
         if (isLiked) {
           likedPostIds.remove(postId);
