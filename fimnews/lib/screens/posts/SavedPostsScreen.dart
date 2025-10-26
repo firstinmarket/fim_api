@@ -18,6 +18,7 @@ class _SavedPostsScreenState extends State<SavedPostsScreen> {
   Set<String> savedPostIds = <String>{};
   List<String> categories = [];
   List<Map<String, dynamic>> savedPosts = [];
+  List<String> allCategories = [];
   int currentIndex = 0;
   bool loading = false;
   bool refreshing = false;
@@ -211,10 +212,7 @@ class _SavedPostsScreenState extends State<SavedPostsScreen> {
       for (final post in savedPosts) {
         final postId = post['id']?.toString() ?? '';
         if (postId.isNotEmpty) {
-          // All posts in this screen are saved by definition
           savedPostIds.add(postId);
-
-          // Check like status
           final isLiked =
               (post['is_liked']?.toString() == '1' || post['is_liked'] == true);
           if (isLiked) {
@@ -224,20 +222,30 @@ class _SavedPostsScreenState extends State<SavedPostsScreen> {
         }
       }
 
-      final Set<String> catSet =
-          savedPosts.map((p) => p['category_name']?.toString() ?? '').toSet();
-      categories = catSet.where((c) => c.isNotEmpty).toList();
-
-      categories.insert(0, 'All');
-
+      // Build allCategories from category_names (comma-separated string)
+      final Set<String> catSet = {};
+      for (final post in savedPosts) {
+        if (post.containsKey('category_names') &&
+            post['category_names'] != null) {
+          final names = post['category_names'].toString().split(',');
+          for (final name in names) {
+            final trimmed = name.trim();
+            if (trimmed.isNotEmpty) catSet.add(trimmed);
+          }
+        }
+      }
+      allCategories = catSet.where((c) => c.isNotEmpty).toList();
+      categories = List<String>.from(allCategories);
+      if (!categories.contains('All')) {
+        categories.insert(0, 'All');
+      }
       if (categories.isNotEmpty && selectedCategory.isEmpty) {
         selectedCategory = 'All';
       }
-
-      debugPrint('Final likedPostIds for saved posts: $likedPostIds');
-      debugPrint('Final savedPostIds for saved posts: $savedPostIds');
+      debugPrint('Final likedPostIds after fetching: $likedPostIds');
+      debugPrint('Final savedPostIds after fetching: $savedPostIds');
     } catch (e) {
-      debugPrint("Error fetching saved posts: $e");
+      debugPrint("Error fetching posts: $e");
     }
     if (mounted) {
       setState(() => loading = false);
@@ -248,7 +256,7 @@ class _SavedPostsScreenState extends State<SavedPostsScreen> {
     if (selectedCategory.isEmpty || selectedCategory == 'All')
       return savedPosts;
     final filtered = savedPosts
-        .where((p) => p['category_name'] == selectedCategory)
+        .where((p) => p['category_names'] == selectedCategory)
         .toList();
     return filtered;
   }

@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -16,6 +19,74 @@ class PostScreen extends StatefulWidget {
 }
 
 class _PostScreenState extends State<PostScreen> {
+  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+      FlutterLocalNotificationsPlugin();
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _initNotifications();
+  }
+
+  Future<void> _initNotifications() async {
+    const AndroidInitializationSettings initializationSettingsAndroid =
+        AndroidInitializationSettings('@mipmap/ic_launcher');
+    final InitializationSettings initializationSettings =
+        InitializationSettings(android: initializationSettingsAndroid);
+    await flutterLocalNotificationsPlugin.initialize(
+      initializationSettings,
+      onDidReceiveNotificationResponse:
+          (NotificationResponse notificationResponse) async {
+        final payload = notificationResponse.payload;
+        if (payload != null) {
+          _openPostById(payload);
+        }
+      },
+    );
+  }
+
+  Future<void> _showMobileNotification(
+      String title, String body, String postId) async {
+    const AndroidNotificationDetails androidPlatformChannelSpecifics =
+        AndroidNotificationDetails(
+      'post_channel',
+      'Post Notifications',
+      channelDescription: 'Notifications for new posts',
+      importance: Importance.max,
+      priority: Priority.high,
+      ticker: 'ticker',
+    );
+    const NotificationDetails platformChannelSpecifics =
+        NotificationDetails(android: androidPlatformChannelSpecifics);
+    await flutterLocalNotificationsPlugin.show(
+      0,
+      title,
+      body,
+      platformChannelSpecifics,
+      payload: postId,
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchNotifications(
+      {int? userId, int hours = 24}) async {
+    final url = Uri.parse(
+        'https://www.firstinmarket.com/app/api/routes/notifications/notifications.php');
+    final response = await http.get(url);
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      if (data['success'] == true && data['data'] is List) {
+        return List<Map<String, dynamic>>.from(data['data']);
+      }
+    }
+    return [];
+  }
+
+  void _openPostById(String postId) {
+    // Implement navigation to post detail by postId
+    debugPrint('Open post with ID: $postId');
+    // You can push to a detail screen here
+  }
+
   // State variables
   Set<String> likedPostIds = <String>{};
   Set<String> savedPostIds = <String>{};
@@ -147,218 +218,234 @@ class _PostScreenState extends State<PostScreen> {
       final userId = prefs.getString('user_id');
       if (userId == null) return;
 
-      final notifications = await NewsService.fetchNotifications(
-        userId: int.tryParse(userId),
-        hours: 24,
-      );
+      final notifications =
+          await _fetchNotifications(userId: int.tryParse(userId), hours: 24);
 
       if (!mounted) return;
 
-      showDialog(
+      showGeneralDialog(
         context: context,
-        builder: (context) => Dialog(
-          alignment: Alignment.centerRight,
-          insetPadding:
-              const EdgeInsets.only(left: 50, right: 16, top: 50, bottom: 50),
-          backgroundColor: Colors.transparent,
-          child: Container(
-            width: 300,
-            decoration: BoxDecoration(
-              color: const Color(0xFF1A1A2E),
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.3),
-                  blurRadius: 20,
-                  offset: const Offset(-4, 0),
-                ),
-              ],
-            ),
-            child: Column(
-              children: [
-                // Header
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        Colors.orange.shade400,
-                        Colors.deepOrange.shade500
-                      ],
+        barrierDismissible: true,
+        barrierLabel: 'Notifications',
+        transitionDuration: const Duration(milliseconds: 350),
+        pageBuilder: (context, animation, secondaryAnimation) {
+          return Align(
+            alignment: Alignment.centerRight,
+            child: Material(
+              color: Colors.transparent,
+              child: Container(
+                width: 340,
+                height: MediaQuery.of(context).size.height,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF181A20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.4),
+                      blurRadius: 30,
+                      offset: const Offset(-8, 0),
                     ),
-                    borderRadius:
-                        const BorderRadius.vertical(top: Radius.circular(16)),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Notifications',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: () => Navigator.pop(context),
-                        icon: const Icon(Icons.close, color: Colors.white),
-                        iconSize: 20,
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
-                      ),
-                    ],
-                  ),
+                  ],
+                  borderRadius:
+                      const BorderRadius.horizontal(left: Radius.circular(24)),
                 ),
-
-                // Notification list
-                Expanded(
-                  child: notifications.isEmpty
-                      ? const Center(
-                          child: Padding(
-                            padding: EdgeInsets.all(32.0),
-                            child: Text(
-                              'No new notifications',
-                              style: TextStyle(
-                                color: Colors.white54,
-                                fontSize: 14,
-                              ),
-                              textAlign: TextAlign.center,
+                child: Column(
+                  children: [
+                    // Header
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 18),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF232A3B),
+                        borderRadius:
+                            BorderRadius.vertical(top: Radius.circular(24)),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Notifications',
+                            style: TextStyle(
+                              color: Color(0xFF5F8DFF),
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
-                        )
-                      : ListView.separated(
-                          padding: const EdgeInsets.all(16),
-                          itemCount: notifications.length,
-                          separatorBuilder: (context, index) => const Divider(
-                            color: Colors.white12,
-                            height: 24,
+                          IconButton(
+                            onPressed: () => Navigator.pop(context),
+                            icon: const Icon(Icons.close, color: Colors.white),
+                            iconSize: 24,
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
                           ),
-                          itemBuilder: (context, index) {
-                            final notification = notifications[index];
-                            return GestureDetector(
-                              onTap: () {
-                                Navigator.pop(context);
-                             
-                                debugPrint(
-                                    'Tapped notification: ${notification.post.title}');
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF232A3B),
-                                  borderRadius: BorderRadius.circular(12),
+                        ],
+                      ),
+                    ),
+
+                    // Notification list
+                    Expanded(
+                      child: notifications.isEmpty
+                          ? const Center(
+                              child: Padding(
+                                padding: EdgeInsets.all(40.0),
+                                child: Text(
+                                  'No new notifications',
+                                  style: TextStyle(
+                                    color: Colors.white54,
+                                    fontSize: 16,
+                                  ),
+                                  textAlign: TextAlign.center,
                                 ),
-                                child: Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    // Post image
-                                    if (notification.post.image != null)
-                                      ClipRRect(
-                                        borderRadius: BorderRadius.circular(8),
-                                        child: Image.network(
-                                          notification.post.image!,
-                                          width: 60,
-                                          height: 60,
-                                          fit: BoxFit.cover,
-                                          errorBuilder: (ctx, error, stack) =>
-                                              Container(
-                                            width: 60,
-                                            height: 60,
-                                            color: Colors.grey[800],
-                                            child: const Icon(Icons.image,
-                                                color: Colors.white54),
+                              ),
+                            )
+                          : ListView.builder(
+                              padding: const EdgeInsets.symmetric(
+                                  vertical: 16, horizontal: 12),
+                              itemCount: notifications.length,
+                              itemBuilder: (context, index) {
+                                final notification = notifications[index];
+                                final post = notification['post'] ?? {};
+                                final image = post['image'] ?? '';
+                                final title = post['title'] ?? '';
+                                final sentAt = notification['sent_at'] ?? '';
+                                final postId =
+                                    notification['post_id']?.toString() ?? '';
+                                String timeAgo = '';
+                                if (sentAt.isNotEmpty) {
+                                  final now = DateTime.now();
+                                  DateTime? sent;
+                                  try {
+                                    sent = DateTime.parse(sentAt);
+                                  } catch (_) {}
+                                  if (sent != null) {
+                                    final diff = now.difference(sent);
+                                    if (diff.inDays > 0) {
+                                      timeAgo =
+                                          '${diff.inDays} day${diff.inDays > 1 ? 's' : ''} ago';
+                                    } else if (diff.inHours > 0) {
+                                      timeAgo =
+                                          '${diff.inHours} hr${diff.inHours > 1 ? 's' : ''} ago';
+                                    } else if (diff.inMinutes > 0) {
+                                      timeAgo =
+                                          '${diff.inMinutes} min${diff.inMinutes > 1 ? 's' : ''} ago';
+                                    } else {
+                                      timeAgo = 'Just now';
+                                    }
+                                  }
+                                }
+                                return InkWell(
+                                  onTap: () {
+                                    Navigator.pop(context);
+                                    _openPostById(postId);
+                                  },
+                                  borderRadius: BorderRadius.circular(14),
+                                  child: Container(
+                                    margin:
+                                        const EdgeInsets.symmetric(vertical: 8),
+                                    padding: const EdgeInsets.all(14),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF232A3B),
+                                      borderRadius: BorderRadius.circular(14),
+                                    ),
+                                    child: Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        if (image.isNotEmpty)
+                                          ClipRRect(
+                                            borderRadius:
+                                                BorderRadius.circular(10),
+                                            child: Image.network(
+                                              image,
+                                              width: 56,
+                                              height: 56,
+                                              fit: BoxFit.cover,
+                                              errorBuilder:
+                                                  (ctx, error, stack) =>
+                                                      Container(
+                                                width: 56,
+                                                height: 56,
+                                                color: Colors.grey[800],
+                                                child: const Icon(Icons.image,
+                                                    color: Colors.white54),
+                                              ),
+                                            ),
                                           ),
-                                        ),
-                                      ),
-                                    const SizedBox(width: 12),
-                                    // Content
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Row(
+                                        const SizedBox(width: 14),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
                                             children: [
-                                              if (notification.isNew)
-                                                Container(
-                                                  margin: const EdgeInsets.only(
-                                                      right: 6),
-                                                  padding: const EdgeInsets
-                                                      .symmetric(
-                                                    horizontal: 6,
-                                                    vertical: 2,
-                                                  ),
-                                                  decoration: BoxDecoration(
-                                                    color: Colors.orange,
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            4),
-                                                  ),
-                                                  child: const Text(
-                                                    'NEW',
-                                                    style: TextStyle(
-                                                      color: Colors.white,
-                                                      fontSize: 10,
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                    ),
-                                                  ),
-                                                ),
                                               Text(
-                                                notification.timeAgo,
+                                                title,
+                                                style: const TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 15,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                                maxLines: 2,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                              const SizedBox(height: 6),
+                                              Text(
+                                                timeAgo,
                                                 style: const TextStyle(
                                                   color: Colors.white54,
-                                                  fontSize: 11,
+                                                  fontSize: 12,
                                                 ),
                                               ),
                                             ],
                                           ),
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            notification.post.title,
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                            maxLines: 2,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                          if (notification.post.categories !=
-                                              null) ...[
-                                            const SizedBox(height: 4),
-                                            Text(
-                                              notification.post.categories!,
-                                              style: const TextStyle(
-                                                color: Colors.white54,
-                                                fontSize: 11,
-                                              ),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ],
-                                        ],
-                                      ),
+                                        ),
+                                      ],
                                     ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          },
-                        ),
+                                  ),
+                                );
+                              },
+                            ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
-          ),
-        ),
+          );
+        },
+        transitionBuilder: (context, animation, secondaryAnimation, child) {
+          final curvedValue = Curves.easeInOut.transform(animation.value);
+          return Transform.translate(
+            offset: Offset(340 * (1 - curvedValue), 0),
+            child: child,
+          );
+        },
       );
 
-      // Mark notifications as seen
-      if (notifications.isNotEmpty) {
-        final lastId = notifications.first.id;
-        await NewsService.markNotificationsAsSeen(lastId);
-        await _loadNotificationCount(); // Refresh count
+      for (final notification in notifications) {
+        final post = notification['post'] ?? {};
+        final title = (post['title'] ?? '').toString();
+        final postId = (notification['post_id'] ?? '').toString();
+        final sentAt = (notification['sent_at'] ?? '').toString();
+        String timeAgo = '';
+        if (sentAt.isNotEmpty) {
+          final now = DateTime.now();
+          DateTime? sent;
+          try {
+            sent = DateTime.parse(sentAt);
+          } catch (_) {}
+          if (sent != null) {
+            final diff = now.difference(sent);
+            if (diff.inDays > 0) {
+              timeAgo = '${diff.inDays} day${diff.inDays > 1 ? 's' : ''} ago';
+            } else if (diff.inHours > 0) {
+              timeAgo = '${diff.inHours} hr${diff.inHours > 1 ? 's' : ''} ago';
+            } else if (diff.inMinutes > 0) {
+              timeAgo =
+                  '${diff.inMinutes} min${diff.inMinutes > 1 ? 's' : ''} ago';
+            } else {
+              timeAgo = 'Just now';
+            }
+          }
+        }
+        await _showMobileNotification(title, timeAgo, postId);
       }
     } catch (e) {
       debugPrint('Error showing notification popup: $e');

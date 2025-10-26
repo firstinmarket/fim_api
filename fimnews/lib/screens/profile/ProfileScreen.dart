@@ -1,3 +1,4 @@
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:vibration/vibration.dart';
@@ -15,6 +16,7 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
+  bool notificationsEnabled = false;
   Map<String, dynamic> user = {
     'user_id': '',
     'name': '',
@@ -103,6 +105,50 @@ class _ProfileScreenState extends State<ProfileScreen> {
     debugPrint('ProfileScreen: Initializing');
     fetchProfile();
     fetchCategories();
+    checkNotificationStatus();
+  }
+
+  Future<void> checkNotificationStatus() async {
+    setState(() {
+      notificationsEnabled = false;
+    });
+  }
+
+  Future<void> saveFcmToken() async {
+    String? token;
+    try {
+      token = await FirebaseMessaging.instance.getToken();
+    } catch (e) {
+      debugPrint('Error getting FCM token: $e');
+      _showErrorDialog('Could not get notification token.');
+      return;
+    }
+    if (token == null) {
+      _showErrorDialog('Could not get notification token.');
+      return;
+    }
+    final prefs = await SharedPreferences.getInstance();
+    final userId = prefs.getString('user_id');
+    if (userId == null) {
+      _showErrorDialog('User ID not found. Please log in again.');
+      return;
+    }
+    try {
+      final response = await ApiService.apiPost('profile/save_fcm_token.php', {
+        'user_id': userId,
+        'fcm_token': token,
+      });
+      if (response is Map<String, dynamic> && response['success'] == true) {
+        setState(() {
+          notificationsEnabled = true;
+        });
+        _showSuccessDialog('Success', 'Notifications enabled!');
+      } else {
+        _showErrorDialog('Failed to save notification token.');
+      }
+    } catch (e) {
+      _showErrorDialog('Error saving notification token: $e');
+    }
   }
 
   Future<void> fetchProfile() async {
