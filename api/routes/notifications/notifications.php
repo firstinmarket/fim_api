@@ -12,7 +12,6 @@ try {
     $offset = isset($_GET['offset']) ? (int)$_GET['offset'] : 0;
     $user_id = isset($_GET['user_id']) ? (int)$_GET['user_id'] : null;
     
-    // Only show notifications from last 24 hours
     $hours = isset($_GET['hours']) ? (int)$_GET['hours'] : 24;
     
     $query = "
@@ -44,8 +43,8 @@ try {
     }
     
     $query .= " GROUP BY nl.id ORDER BY nl.sent_at DESC LIMIT ? OFFSET ?";
-    $params[] = $limit;
-    $params[] = $offset;
+    $params[] = (int)$limit;
+    $params[] = (int)$offset;
     
     $stmt = $pdo->prepare($query);
     $stmt->execute($params);

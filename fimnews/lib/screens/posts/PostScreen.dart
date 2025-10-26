@@ -239,7 +239,7 @@ class _PostScreenState extends State<PostScreen> {
                             return GestureDetector(
                               onTap: () {
                                 Navigator.pop(context);
-                                // TODO: Navigate to post detail
+                             
                                 debugPrint(
                                     'Tapped notification: ${notification.post.title}');
                               },
@@ -592,11 +592,34 @@ class _PostScreenState extends State<PostScreen> {
         }
       }
 
-      final Set<String> catSet =
-          posts.map((p) => p['category_names']?.toString() ?? '').toSet();
-      categories = catSet.where((c) => c.isNotEmpty).toList();
-
-      categories.insert(0, 'All');
+      // Use all_categories from backend response if available
+      List<String> allCategories = [];
+      if (postsResponse is Map<String, dynamic> &&
+          postsResponse.containsKey('all_categories')) {
+        final ac = postsResponse['all_categories'];
+        if (ac is List) {
+          allCategories = ac.map((c) => c.toString()).toList();
+        }
+      }
+      // Fallback: build from posts if all_categories not available
+      if (allCategories.isEmpty) {
+        final Set<String> catSet = {};
+        for (final post in posts) {
+          for (var i = 1; i <= 5; i++) {
+            final key = 'category_' + i.toString();
+            if (post.containsKey(key) &&
+                post[key] != null &&
+                post[key].toString().isNotEmpty) {
+              catSet.add(post[key].toString());
+            }
+          }
+        }
+        allCategories = catSet.where((c) => c.isNotEmpty).toList();
+      }
+      categories = List<String>.from(allCategories);
+      if (!categories.contains('All')) {
+        categories.insert(0, 'All');
+      }
 
       if (categories.isNotEmpty && selectedCategory.isEmpty) {
         selectedCategory = 'All';
@@ -643,9 +666,18 @@ class _PostScreenState extends State<PostScreen> {
 
   List<Map<String, dynamic>> _getFilteredPosts() {
     if (selectedCategory.isEmpty || selectedCategory == 'All') return posts;
-    return posts
-        .where((p) => p['category_names']?.toString() == selectedCategory)
-        .toList();
+    // Filter posts by checking all category_X fields for a match
+    return posts.where((p) {
+      for (var i = 1; i <= 5; i++) {
+        final key = 'category_' + i.toString();
+        if (p.containsKey(key) &&
+            p[key] != null &&
+            p[key].toString() == selectedCategory) {
+          return true;
+        }
+      }
+      return false;
+    }).toList();
   }
 
   Widget _buildPostCard(Map<String, dynamic> currentPost) {
