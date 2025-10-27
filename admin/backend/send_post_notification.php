@@ -128,7 +128,8 @@ try {
     echo json_encode([
         'success' => false,
         'error' => 'Failed to send notification',
-        'message' => $e->getMessage()
+        'message' => $e->getMessage(),
+        "payload_debug" => isset($jsonPayload) ? $jsonPayload : null
     ]);
 }
 ?>
