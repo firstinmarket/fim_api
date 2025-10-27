@@ -75,9 +75,17 @@ try {
     ];
 
     $jsonPayload = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-    if (!$jsonPayload || strpos($jsonPayload, 'app_id') === false || empty($payload['app_id'])) {
-        error_log('OneSignal payload debug: ' . print_r($payload, true));
-        throw new Exception('Malformed OneSignal payload: ' . $jsonPayload);
+    if (!$jsonPayload) {
+        error_log('OneSignal payload debug: JSON encoding failed. Payload: ' . print_r($payload, true));
+        throw new Exception('Malformed OneSignal payload: JSON encoding failed');
+    }
+    if (strpos($jsonPayload, 'app_id') === false) {
+        error_log('OneSignal payload debug: app_id missing in JSON. JSON: ' . $jsonPayload);
+        throw new Exception('Malformed OneSignal payload: app_id missing in JSON');
+    }
+    if (empty($payload['app_id'])) {
+        error_log('OneSignal payload debug: app_id value is empty. Payload: ' . print_r($payload, true));
+        throw new Exception('Malformed OneSignal payload: app_id value is empty');
     }
 
     $ch = curl_init();
