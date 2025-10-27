@@ -62,35 +62,39 @@ try {
 
     if (empty($playerIds)) throw new Exception('No registered devices found');
 
+
     $payload = [
-        'app_id' => $ONESIGNAL_APP_ID,
-        'include_player_ids' => array_values(array_unique($playerIds)), 
+        'app_id' => (string)$ONESIGNAL_APP_ID,
+        'include_player_ids' => array_values(array_unique($playerIds)),
         'contents' => ['en' => $body],
         'data' => $notificationData,
-        'big_picture' => $post['image'] ?? null,
+        'big_picture' => !empty($post['image']) ? $post['image'] : null,
         'large_icon' => 'https://firstinmarket.com/assets/img/main/icon.png',
-      
         'android_accent_color' => 'FF9933',
         'priority' => 10
     ];
 
     $jsonPayload = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+    if (!$jsonPayload || strpos($jsonPayload, 'app_id') === false) {
+        throw new Exception('Malformed OneSignal payload: ' . $jsonPayload);
+    }
 
     $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, "https://onesignal.com/api/v1/notifications");
+    curl_setopt($ch, CURLOPT_URL, 'https://onesignal.com/api/v1/notifications');
     curl_setopt($ch, CURLOPT_HTTPHEADER, [
-        "Content-Type: application/json; charset=utf-8",
-        "Authorization: Basic $ONESIGNAL_API_KEY"
+        'Content-Type: application/json; charset=utf-8',
+        'Authorization: Basic ' . $ONESIGNAL_API_KEY
     ]);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POST, true);
     curl_setopt($ch, CURLOPT_POSTFIELDS, $jsonPayload);
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
     $response = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
 
-    if ($httpCode !== 200) {
-        throw new Exception("OneSignal API Error: " . $response);
+    if ($httpCode < 200 || $httpCode >= 300) {
+        throw new Exception('OneSignal API Error: ' . $response);
     }
 
     $sentCount = count($playerIds);
