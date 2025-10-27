@@ -36,7 +36,7 @@ try {
     $notificationData = [
         'post_id' => $post['id'],
         'type' => 'new_post',
-        'image' => $post['image'] ?? '',
+        'image' => !empty($post['image']) && is_string($post['image']) ? $post['image'] : '',
         'click_action' => 'OPEN_POST',
         'timestamp' => time()
     ];
@@ -68,7 +68,7 @@ try {
         'include_player_ids' => array_values(array_unique($playerIds)),
         'contents' => ['en' => $body],
         'data' => $notificationData,
-        'big_picture' => !empty($post['image']) ? $post['image'] : null,
+        'big_picture' => !empty($post['image']) && is_string($post['image']) ? $post['image'] : null,
         'large_icon' => 'https://firstinmarket.com/assets/img/main/icon.png',
         'android_accent_color' => 'FF9933',
         'priority' => 10
