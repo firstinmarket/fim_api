@@ -1,5 +1,4 @@
 <?php
-
 require_once '../resource/conn.php';
 
 header('Content-Type: application/json');
@@ -10,7 +9,7 @@ header('Access-Control-Allow-Headers: Content-Type, Authorization');
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') exit(0);
 
 $ONESIGNAL_APP_ID = "48392a9a-9863-4cb1-96ba-3a7820029e4f";
-$ONESIGNAL_API_KEY = "os_v2_app_ja4svguymngldfv2hj4caau6j547lhlm3vceb6ngp7bpxkzuu74gfdk63ohh45hsips3j6hvj5qz4tqah42pone4bqinzghsap24zia"; 
+$ONESIGNAL_API_KEY = "os_v2_app_ja4svguymngldfv2hj4caau6j547lhlm3vceb6ngp7bpxkzuu74gfdk63ohh45hsips3j6hvj5qz4tqah42pone4bqinzghsap24zia";
 
 try {
     $input = json_decode(file_get_contents('php://input'), true);
@@ -19,7 +18,6 @@ try {
     $postId = $input['post_id'];
     $pdo = getDB();
 
-    
     $stmt = $pdo->prepare("
         SELECT p.id, p.title, p.content, p.image, 
                GROUP_CONCAT(DISTINCT c.id) as category_ids,
@@ -34,7 +32,6 @@ try {
     $post = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$post) throw new Exception('Post not found');
 
-    $title = '📰 New Article Published';
     $body = strlen($post['title']) > 100 ? substr($post['title'], 0, 97) . '...' : $post['title'];
     $notificationData = [
         'post_id' => $post['id'],
@@ -45,10 +42,8 @@ try {
     ];
 
     $categoryIds = $post['category_ids'] ? explode(',', $post['category_ids']) : [];
-    $sentCount = 0;
-    $failedCount = 0;
-
     $playerIds = [];
+
     if (!empty($categoryIds)) {
         foreach ($categoryIds as $catId) {
             $stmt = $pdo->prepare("
@@ -61,40 +56,40 @@ try {
             $playerIds = array_merge($playerIds, $stmt->fetchAll(PDO::FETCH_COLUMN));
         }
     } else {
-        $stmt = $pdo->prepare("SELECT onesignal_player_id FROM users WHERE onesignal_player_id IS NOT NULL AND onesignal_player_id != ''");
-        $stmt->execute();
+        $stmt = $pdo->query("SELECT onesignal_player_id FROM users WHERE onesignal_player_id IS NOT NULL AND onesignal_player_id != ''");
         $playerIds = $stmt->fetchAll(PDO::FETCH_COLUMN);
     }
 
     if (empty($playerIds)) throw new Exception('No registered devices found');
 
-    
     $payload = [
         'app_id' => $ONESIGNAL_APP_ID,
-        'include_player_ids' => array_values(array_unique($playerIds)),
-        'headings' => ['en' => $title],
+        'include_player_ids' => array_values(array_unique($playerIds)), 
         'contents' => ['en' => $body],
         'data' => $notificationData,
         'big_picture' => $post['image'] ?? null,
-        'android_accent_color' => 'FF9933', // optional
+        'large_icon' => 'https://firstinmarket.com/assets/img/main/icon.png',
+        'small_icon' => 'ic_stat_onesignal_default',
+        'android_accent_color' => 'FF9933',
+        'priority' => 10
     ];
 
-    
+    $jsonPayload = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+
     $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, "https://api.onesignal.com/notifications");
+    curl_setopt($ch, CURLOPT_URL, "https://onesignal.com/api/v1/notifications");
     curl_setopt($ch, CURLOPT_HTTPHEADER, [
         "Content-Type: application/json; charset=utf-8",
         "Authorization: Basic $ONESIGNAL_API_KEY"
     ]);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $jsonPayload);
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
     $response = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
 
     if ($httpCode !== 200) {
-        $failedCount = count($playerIds);
         throw new Exception("OneSignal API Error: " . $response);
     }
 
@@ -102,21 +97,19 @@ try {
 
     $stmt = $pdo->prepare("
         INSERT INTO notification_logs (post_id, sent_count, failed_count, sent_at)
-        VALUES (?, ?, ?, NOW())
+        VALUES (?, ?, 0, NOW())
     ");
-    $stmt->execute([$postId, $sentCount, $failedCount]);
+    $stmt->execute([$postId, $sentCount]);
 
     echo json_encode([
         'success' => true,
         'message' => 'Notification sent successfully via OneSignal',
         'data' => [
             'sent_count' => $sentCount,
-            'failed_count' => $failedCount,
             'post_title' => $post['title'],
             'categories' => $post['category_names'] ?? 'All Users'
         ]
     ]);
-
 } catch (Throwable $e) {
     http_response_code(500);
     echo json_encode([
