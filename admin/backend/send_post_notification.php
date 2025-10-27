@@ -64,7 +64,7 @@ try {
 
 
     $payload = [
-        'app_id' => (string)$ONESIGNAL_APP_ID,
+        'app_id' => isset($ONESIGNAL_APP_ID) && $ONESIGNAL_APP_ID ? (string)$ONESIGNAL_APP_ID : '',
         'include_player_ids' => array_values(array_unique($playerIds)),
         'contents' => ['en' => $body],
         'data' => $notificationData,
@@ -75,7 +75,8 @@ try {
     ];
 
     $jsonPayload = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-    if (!$jsonPayload || strpos($jsonPayload, 'app_id') === false) {
+    if (!$jsonPayload || strpos($jsonPayload, 'app_id') === false || empty($payload['app_id'])) {
+        error_log('OneSignal payload debug: ' . print_r($payload, true));
         throw new Exception('Malformed OneSignal payload: ' . $jsonPayload);
     }
 
