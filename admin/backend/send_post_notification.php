@@ -69,7 +69,7 @@ try {
         'data' => $notificationData,
         'big_picture' => $post['image'] ?? null,
         'large_icon' => 'https://firstinmarket.com/assets/img/main/icon.png',
-        'small_icon' => 'ic_stat_onesignal_default',
+      
         'android_accent_color' => 'FF9933',
         'priority' => 10
     ];
