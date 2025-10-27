@@ -75,10 +75,7 @@ try {
     ];
 
     $jsonPayload = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-    if (!$jsonPayload) {
-        error_log('OneSignal payload debug: JSON encoding failed. Payload: ' . print_r($payload, true));
-        throw new Exception('Malformed OneSignal payload: JSON encoding failed');
-    }
+   
     if (strpos($jsonPayload, 'app_id') === false) {
         error_log('OneSignal payload debug: app_id missing in JSON. JSON: ' . $jsonPayload);
         throw new Exception('Malformed OneSignal payload: app_id missing in JSON');
