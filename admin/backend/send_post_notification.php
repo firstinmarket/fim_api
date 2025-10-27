@@ -129,7 +129,7 @@ try {
         'success' => false,
         'error' => 'Failed to send notification',
         'message' => $e->getMessage(),
-        "payload_debug" => isset($jsonPayload) ? $jsonPayload : null
+        "payload_debug" =>  $jsonPayload 
     ]);
 }
 ?>
